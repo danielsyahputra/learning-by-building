@@ -1,0 +1,276 @@
+---
+title: "Ekplorasi Spotify Top Chart"
+subtitle: "Lagu Tahun 1970 - 2020"
+author: 'Author: Daniel Syahputra'
+date: 'Updated: `r Sys.Date()`'
+output:
+  cleanrmd::html_document_clean:
+    theme: writ
+    toc: true
+    toc_float: true
+    use_fontawesome: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Pengenalan
+
+### Apa itu Spotify?
+
+Spotify merupakan layanan musik digital yang dapat memberikan kita jutaan lagu dari kreator di seluruh dunia. Spotify memudahkan dalam menemukan musik sesuai dengan preferensi penggunanya. Saat ini, terdapat jutaan lagu yang dapat didengar dari beberapa perangkat seperti ponsel, komputer, tablet, dll.
+
+### Spotify Top Chart
+
+Setiap tahunnya, spotify memberikan daftar lagu-lagu yang termasuk kedalam kategori populer (*top chart*). Pada kali ini, kita akan mencoba mengeksplorasi bagaimana pola dari lagu-lagu yang dapat masuk ke dalam kategori *top chart*.
+
+### Dataset
+
+Dataset yang digunakan berisikan lagu-lagu dari tahun 1970 hingga 2021 yang pernah memasuki *top chart* spotify. Berikut ini adalah informasi mengenai *feature* yang ada pada dataset:
+
+-   `title`
+
+-   `artist`
+
+-   `genre`
+
+-   `bpm`
+
+-   `nrgy`
+
+-   `dnce`
+
+-   `dB`
+
+-   `live`
+
+-   `val`
+
+-   `dur`
+
+-   `acous`
+
+-   `spch`
+
+-   `popularity`
+
+-   `has_win_award`
+
+## Import Data dan Package
+
+```{r message=FALSE, warning=FALSE}
+
+# Library yang akan digunakan
+library(tidyverse)
+library(readr)
+library(ggplot2)
+library(plotly)
+```
+
+```{r}
+spotify <- read.csv("datasets/spotify.csv")
+```
+
+## Data Preparation
+
+### Inspeksi Data
+
+Kita akan melihat bagaimana struktur dari data, dimensi data, serta tipe data yang digunakan. Hal ini akan sangat membantu kita dalam melakukan *data preparation* sebelum data digunakan dalam pemodelan *machine learning*.
+
+```{r}
+# Inspeksi Struktur dan tipe data
+glimpse(spotify)
+```
+
+### Pengecekan Tipe Data
+
+```{r message=FALSE, warning=FALSE}
+# Melihat jumlah unique value setiap kolom
+spotify %>% 
+  summarise_each(funs = n_distinct)
+```
+
+Dari informasi diatas, kita akan mengubah tipe data dari genre menjadi `factor`. Kita juga akan menghapus kolom `X` dikarenakan kolom ini merupakan kolom tambahan hasil *merge* dari beberapa dataset yang telah saya lakukan sebelumnya. Selain itu, kita juga akan mengubah tipe data dari `has_win_award` menjadi integer (diskret).
+
+```{r}
+spotify <- spotify %>% 
+  select(-X) %>% 
+  mutate(genre = as.factor(genre), has_win_award = as.integer(has_win_award))
+
+str(spotify)
+```
+
+### Penanganan *Missing Value*
+
+*Missing value* merupakan kondisi yang harus ditangani sebelum nantinya data digunakan untuk pemodelan. Alasan mengapa *missing value* perlu ditangani dikarenakan hal tersebut dapat mengurangi akurasi dari model *machine learning*.
+
+```{r}
+spotify %>% 
+  is.na() %>% 
+  colSums()
+```
+
+Berdasarkan hasil diatas, dataset kita saat ini tidak memiliki *missing value*.
+
+### Penanganan Data Duplikat
+
+```{r}
+spotify %>% 
+  distinct() %>% 
+  dim()
+```
+
+Awalnya kita memiliki dataset dengan dimensi (1270, 15) dan setelah fungsi `distinct()` dijalankan dimensi dari dataset menjadi (1265, 15). Berarti, sebelumnya terdapat 5 baris yang teridentifikasi sebagai data duplikat. Kita akan menghapus semua baris yang teridentifikasi sebagai data duplikat.
+
+```{r}
+spotify <- spotify %>% 
+  distinct()
+```
+
+## Exploratory Data Analysis
+
+### Hubungan antar fitur dari lagu
+
+```{r}
+library(GGally)
+spotify %>% 
+  select_if(is.numeric) %>% 
+  select(-has_win_award) %>% 
+  ggcorr(label=T)
+```
+
+#### Apakah terdapat durasi tertentu yang dapat mempengaruhi popularitas lagu?
+
+```{r}
+normalize <- function(x) {
+  return((x - min(x)) / (max(x) - min(x)))
+}
+```
+
+```{r}
+spotify %>% 
+  ggplot(aes(x = dur, y = popularity)) + 
+  geom_point() + 
+  geom_smooth(formula=y~x,  method = lm, color="red", fill="#69b3a2", se=TRUE) + 
+  theme_clean() + 
+  labs(
+    title = "Korelasi Durasi dan Popularitas",
+    subtitle = glue("Corr Value: {round(cor(spotify$dur, spotify$popularity), 2)}"),
+    x = "Durasi",
+    y = "Popularitas"
+  )
+```
+
+```{r}
+cor(spotify$dur, spotify$popularity)
+```
+
+### Siapa Artis Paling Populer?
+
+```{r message=FALSE, warning=FALSE}
+popular_artist <- spotify %>% 
+  group_by(artist) %>% 
+  summarise(n_popular_song = n(), .groups = "drop") %>% 
+  arrange(desc(n_popular_song)) %>% 
+  head(15)
+```
+
+```{r}
+library(ggthemes)
+library(glue)
+popular_artist_plot <- popular_artist %>% 
+  ggplot(aes(x = n_popular_song, 
+             y = reorder(artist, n_popular_song),
+             text = glue("Jumlah lagu populer: {n_popular_song}"))) +
+  geom_segment( aes(x = 0, xend=n_popular_song, yend = artist), color="skyblue") +
+  geom_point( color="orange", size=2.5, alpha=0.6) +
+  theme_clean() + 
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank()
+  ) + 
+  labs(
+    title = "Artist dengan Jumlah Lagu Populer Terbanyak",
+    subtitle = "Tahun 1960an - 2020an",
+    x = "Jumlah Lagu Populer",
+    y = "Artist"
+  )
+```
+
+```{r}
+ggplotly(popular_artist_plot, tooltip = "text")
+```
+
+### Genre Lagu Apa yang Terkenal Pada Era Tertentu?
+
+#### Feature Engineering
+
+```{r}
+convert_year <- function(year) {
+  if(year >= 2020) {
+    year <- "2020an"
+  } else if (year >= 2010) {
+    year <- "2010an"
+  } else if (year >= 2000) {
+    year <- "2000an"
+  } else if (year >= 1990) {
+    year <- "1990an"
+  } else if (year >= 1980) {
+    year <- "1980an"
+  } else if (year >= 1970) {
+    year <- "1970an"
+  } else if (year >= 1960) {
+    year <- "1960an"
+  } else {
+    year <- "Sebelum 1960"
+  }
+}
+```
+
+```{r}
+# Membuat kolom baru 'era'
+spotify$era <- sapply(X = spotify$year, 
+                      FUN = convert_year)
+spotify$era <- as.factor(spotify$era)
+```
+
+#### Ekplorasi
+
+```{r}
+popular_genre <- spotify %>% 
+  group_by(era, genre) %>% 
+  summarise(freq = n(), .groups = "drop") %>% 
+  ungroup() %>% 
+  arrange(desc(freq))
+```
+
+```{r}
+popular_genre[match(unique(popular_genre$era), popular_genre$era), ]
+```
+
+Contoh Lagu yang memang trending di era 2010an adalah:
+
+-   Lose You To Love Me - Selena Gomez
+
+-   7 rings - Ariana Grande
+
+-   etc.
+
+## Pemodelan
+
+### Prediksi Popularitas dari Sebuah Lagu
+
+#### Membuat Partisi Data
+
+```{r}
+set.seed(100)
+
+index = sample(1: nrow(spotify), 0.7*nrow(spotify))
+
+train = spotify[index, ]
+test = spotify[-index, ]
+print(dim(train))
+print(dim(test))
+```

@@ -1,0 +1,305 @@
+---
+title: "LBB - Interactive Plotting"
+author: "Daniel Syahputra"
+date: "1/29/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r message=FALSE, warning=FALSE}
+library(ggplot2)
+library(plotly)
+library(lubridate)
+library(tidyverse)
+library(readr)
+```
+
+## Import Data
+
+```{r}
+marketing <- read.csv("datasets/marketing_data.csv")
+head(marketing)
+```
+
+## Data Cleansing
+
+```{r}
+str(marketing)
+```
+
+```{r}
+# Lihat jumlah unique value setiap kolom
+marketing %>% 
+  summarise_each(funs = n_distinct)
+```
+
+Kolom yang diubah tipe data nya:
+
+-   Education
+
+-   Marital Status
+
+-   Country
+
+-   Income
+
+-   Dt_Customer
+
+```{r}
+head(marketing)
+```
+
+```{r}
+# Cleaning Income
+marketing$Income <- parse_number(marketing$Income)
+head(marketing)
+```
+
+```{r}
+marketing$Dt_Customer <- mdy(marketing$Dt_Customer)
+```
+
+```{r}
+colSums(is.na(marketing))
+```
+
+```{r}
+marketing$Education[marketing$Education == "Graduation"] <- "Undergraduate"
+marketing$Education[marketing$Education == "2n Cycle"] <- "Master"
+head(marketing)
+```
+
+```{r}
+status <- c("YOLO", "Alone", "Absurd")
+marketing$Marital_Status[marketing$Marital_Status %in% status] <- "Single"
+```
+
+```{r}
+unique(marketing$Marital_Status)
+```
+
+```{r}
+marketing <- marketing %>% 
+  mutate_if(is.character, as.factor)
+```
+
+------------------------------------------------------------------------
+
+End of Data Cleansing
+
+------------------------------------------------------------------------
+
+## Data Imputation
+
+```{r}
+# Find mean of income group by education and marital_status
+average_income <- aggregate(Income ~ Education + Marital_Status, data=marketing, FUN=mean)
+```
+
+```{r}
+imputed_data <- left_join(marketing[is.na(marketing$Income),], 
+                          average_income, 
+                          by = c("Education", "Marital_Status"))
+imputed_data
+```
+
+```{r}
+imputed_data$Income.x <- imputed_data$Income.y
+imputed_data <- imputed_data %>% select(-Income.y)
+colnames(imputed_data)[5] <- "Income"
+head(imputed_data)
+```
+
+```{r}
+marketing <- full_join(marketing,                             # join imputed data with full dataset
+                            imputed_data, 
+                            by = c('ID',
+                                   'Year_Birth',
+                                   'Education',
+                                   'Marital_Status',
+                                   'Kidhome',
+                                   'Teenhome',
+                                   'Dt_Customer',
+                                   'Recency',
+                                   'MntWines',
+                                   'MntFruits',
+                                   'MntMeatProducts',
+                                   'MntFishProducts',
+                                   'MntSweetProducts',
+                                   'MntGoldProds',
+                                   'NumDealsPurchases',
+                                   'NumWebPurchases',
+                                   'NumCatalogPurchases',
+                                   'NumStorePurchases',
+                                   'NumWebVisitsMonth',
+                                   'AcceptedCmp3',
+                                   'AcceptedCmp4',
+                                   'AcceptedCmp5',
+                                   'AcceptedCmp1',
+                                   'AcceptedCmp2',
+                                   'Response',
+                                   'Complain',
+                                   'Country'))
+marketing <- marketing  %>%                                  
+   mutate(Income = coalesce(Income.x, Income.y)) %>%
+   select(-c("Income.x", "Income.y"))
+
+head(marketing)
+```
+
+```{r}
+colSums(is.na(marketing))
+```
+
+### EDA
+
+```{r}
+str(marketing)
+```
+
+```{r}
+marketing <- marketing %>% 
+  mutate(Month_Enrollment = month(Dt_Customer, label = T, abbr = F),
+         Day_Enrollment = wday(Dt_Customer, label = T, abbr = F),
+         Year_Enrollment = year(Dt_Customer))
+
+head(marketing)
+```
+
+```{r}
+data1 <- marketing %>% 
+  group_by(Month_Enrollment) %>% 
+  summarise(freq = n()) %>% 
+  ungroup()
+head(data1)
+```
+
+```{r}
+library(ggthemes)
+library(glue)
+plot1 <- data1 %>% 
+  ggplot(aes(x = freq, 
+             y = reorder(Month_Enrollment, freq),
+             text = glue("Jumlah Enrollment: {freq}"))) +
+  geom_segment( aes(x = 0, xend=freq, yend = Month_Enrollment), color="skyblue") +
+  geom_point( color="orange", size=2.5, alpha=0.6) +
+  theme_clean() + 
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.y = element_blank()
+  ) + 
+  labs(
+    title = "Jumlah Enrollment Customer Berdasarkan Bulan",
+    x = "Jumlah Enrollment",
+    y = "Bulan"
+  )
+```
+
+```{r}
+ggplotly(plot1, tooltip = "text")
+```
+
+#### Data 2
+
+Tampilkan density plot untuk masing-masing product
+
+```{r}
+productData <- marketing %>% 
+  pivot_longer(cols = c("MntWines", 
+                        "MntFruits", 
+                        "MntMeatProducts", 
+                        "MntFishProducts", 
+                        "MntSweetProducts",
+                        "MntGoldProds"),
+               names_to = "ProductType",
+               values_to = "AmountSpent",
+               names_prefix = "Mnt") %>% 
+  select(ProductType, AmountSpent) %>% 
+  filter(AmountSpent < 1000)
+```
+
+```{r}
+options(scipen = 99)
+histProduct <- productData %>% 
+  ggplot(aes(x = AmountSpent, group=ProductType, fill=ProductType)) + 
+  geom_density(adjust=1.5, alpha=.4) + 
+  theme_clean() +
+  labs(
+    title = "Product Type Density Plot", x = NULL, y = NULL
+  ) + 
+  scale_fill_brewer(palette = "Set2")
+
+ggplotly(histProduct, tooltip = "x")
+```
+
+```{r}
+marketing %>% 
+      select(MntWines, MntFruits, MntMeatProducts, 
+             MntFishProducts, MntSweetProducts, MntGoldProds)
+```
+
+```{r}
+platformData <- marketing %>% 
+  select(NumWebPurchases, NumCatalogPurchases, NumStorePurchases)
+colnames(platformData) <- c("Web", "Catalog", "Store")
+platformData <- platformData %>% 
+  pivot_longer(cols = c("Web", 
+                        "Catalog", 
+                        "Store"),
+               names_to = "PlatformType",
+               values_to = "NumPurchases",
+               names_prefix = "Num") %>% 
+  select(PlatformType, NumPurchases)
+```
+
+```{r}
+options(scipen = 99)
+histPlatform <- platformData %>% 
+  ggplot(aes(x = NumPurchases, group=PlatformType, fill=PlatformType)) + 
+  geom_density(adjust=1.5, alpha=.4) + 
+  theme_clean() +
+  labs(
+    title = "Platform Type Density Plot", x = NULL, y = NULL
+  ) + 
+  scale_fill_brewer(palette = "Set2")
+
+ggplotly(histPlatform, tooltip = "x")
+```
+
+### Data 3
+
+```{r}
+data3 <- marketing %>% 
+  select(AcceptedCmp1, AcceptedCmp2, AcceptedCmp3, AcceptedCmp4, AcceptedCmp5) 
+```
+
+```{r}
+campaingn_cols <- c("AcceptedCmp1", "AcceptedCmp2", "AcceptedCmp3", "AcceptedCmp4", "AcceptedCmp5")
+data3[, campaingn_cols] <- lapply(data3[, campaingn_cols], FUN = sum)
+data3 <- head(data3,1)
+data3 <- data3 %>%
+  pivot_longer(cols = c("AcceptedCmp1", "AcceptedCmp2", "AcceptedCmp3", "AcceptedCmp4", "AcceptedCmp5"),
+                      names_to = "Campaign",
+                      values_to = "Total",
+                      names_prefix = "Accepted")
+data3
+```
+
+```{r}
+barCampaign <- data3 %>% 
+  ggplot(aes(x = Total, 
+             y = reorder(Campaign, Total),
+             text = glue("Total Accepted: {Total}")))+
+  geom_col(aes(fill = Campaign), show.legend = F) + 
+  labs(title = "Campaign Total Accepted", 
+       x = "Total", 
+       y = "Campaign") +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set2")
+
+ggplotly(barCampaign, tooltip = "text")
+```
