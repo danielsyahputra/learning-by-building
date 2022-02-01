@@ -12,16 +12,13 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(shiny)
 library(shinydashboard)
-library(shinydashboardPlus)
-library(dashboardthemes)
-library(sass)
 library(tidyverse)
-library(ggplot2)
-library(plotly)
 library(lubridate)
-library(DT)
-library(ggthemes)
-library(readr)
+library(scales)
+library(echarts4r)
+library(highcharter)
+library(htmlwidgets)
+
 
 # Data Preparation
 marketing <- read.csv("datasets/marketing_data.csv")
@@ -35,21 +32,21 @@ marketing$Education[marketing$Education == "2n Cycle"] <- "Master"
 status <- c("YOLO", "Alone", "Absurd")
 marketing$Marital_Status[marketing$Marital_Status %in% status] <- "Single"
 
-marketing <- marketing %>% 
+marketing <- marketing %>%
   mutate_if(is.character, as.factor)
 
 average_income <- aggregate(Income ~ Education + Marital_Status, data=marketing, FUN=mean)
 
-imputed_data <- left_join(marketing[is.na(marketing$Income),], 
-                          average_income, 
+imputed_data <- left_join(marketing[is.na(marketing$Income),],
+                          average_income,
                           by = c("Education", "Marital_Status"))
 
 imputed_data$Income.x <- imputed_data$Income.y
 imputed_data <- imputed_data %>% select(-Income.y)
 colnames(imputed_data)[5] <- "Income"
 
-marketing <- full_join(marketing,                             
-                       imputed_data, 
+marketing <- full_join(marketing,
+                       imputed_data,
                        by = c('ID',
                               'Year_Birth',
                               'Education',
@@ -77,12 +74,97 @@ marketing <- full_join(marketing,
                               'Response',
                               'Complain',
                               'Country'))
-marketing <- marketing  %>%                                  
+marketing <- marketing  %>%
   mutate(Income = coalesce(Income.x, Income.y)) %>%
   select(-c("Income.x", "Income.y"))
 ```
 
 ```{r}
 colSums(is.na(marketing))
+```
+```{r}
+marketing %>% 
+  filter(Income < 0)
+```
+
+```{r}
+valueBoxSpark <- function(value, title, sparkobj = NULL, subtitle, info = NULL, 
+                            icon = NULL, color = "aqua", width = 4, href = NULL){
+    
+    shinydashboard:::validateColor(color)
+    
+    if (!is.null(icon))
+      shinydashboard:::tagAssert(icon, type = "i")
+    
+    info_icon <- tags$small(
+      tags$i(
+        class = "fa fa-info-circle fa-lg",
+        title = info,
+        `data-toggle` = "tooltip",
+        style = "color: rgba(255, 255, 255, 0.75);"
+      ),
+      # bs3 pull-right 
+      # bs4 float-right
+      class = "pull-right float-right"
+    )
+    
+    boxContent <- div(
+      class = paste0("small-box bg-", color),
+      div(
+        class = "inner",
+        tags$small(title),
+        if (!is.null(sparkobj)) info_icon,
+        h3(value),
+        if (!is.null(sparkobj)) sparkobj,
+        p(subtitle)
+      ),
+      # bs3 icon-large
+      # bs4 icon
+      if (!is.null(icon)) div(class = "icon-large icon", icon, style = "z-index; 0")
+    )
+    
+    if (!is.null(href)) 
+      boxContent <- a(href = href, boxContent)
+    
+    div(
+      class = if (!is.null(width)) paste0("col-sm-", width), 
+      boxContent
+    )
+  }
+```
+
+```{r}
+hcCustomerIncome <- hchart(
+      density(marketing$Income),
+      type = "area", name = "Income",
+      color = "#db902e"
+    ) %>% 
+      hc_title(text = "Customer's Income") %>% 
+      hc_tooltip(crosshairs = TRUE,
+                 borderWidth = 2)
+    
+    vbCustomerIncome <- valueBoxSpark(
+      value = dollar(mean(marketing$Income), 
+                     prefix = "$", big.mark = ",",
+                     decimal.mark = ".", 
+                     accuracy = 0.01),
+      title = toupper("AVERAGE CUSTOMER INCOME"),
+      sparkobj = hcCustomerIncome,
+      info = "This is the customer income based on marketing data",
+      subtitle = tagList("Customer Income ",
+                         HTML("&uarr;"),
+                         percent(mean(marketing$Income), 
+                                 decimal.mark = ".", 
+                                 accuracy = .01)),
+      icon = icon("money-bill-wave"),
+      color = "teal",
+      href = NULL
+    )
+    
+vbCustomerIncome
+```
+
+```{r}
+max(marketing$Income)
 ```
 

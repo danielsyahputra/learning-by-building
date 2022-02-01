@@ -1,15 +1,27 @@
+# library(shiny)
+# library(shinydashboard)
+# library(dashboardthemes)
+# library(sass)
+# library(tidyverse)
+# library(ggplot2)
+# library(plotly)
+# library(lubridate)
+# library(DT)
+# library(ggthemes)
+# library(readr)
+# library(glue)
+# 
+
+
 library(shiny)
 library(shinydashboard)
-library(dashboardthemes)
-library(sass)
 library(tidyverse)
-library(ggplot2)
-library(plotly)
 library(lubridate)
-library(DT)
-library(ggthemes)
-library(readr)
-library(glue)
+library(scales)
+library(echarts4r)
+library(highcharter)
+library(htmlwidgets)
+
 
 # Data Preparation
 marketing <- read.csv("marketing_data.csv")
@@ -23,21 +35,21 @@ marketing$Education[marketing$Education == "2n Cycle"] <- "Master"
 status <- c("YOLO", "Alone", "Absurd")
 marketing$Marital_Status[marketing$Marital_Status %in% status] <- "Single"
 
-marketing <- marketing %>% 
+marketing <- marketing %>%
   mutate_if(is.character, as.factor)
 
 average_income <- aggregate(Income ~ Education + Marital_Status, data=marketing, FUN=mean)
 
-imputed_data <- left_join(marketing[is.na(marketing$Income),], 
-                          average_income, 
+imputed_data <- left_join(marketing[is.na(marketing$Income),],
+                          average_income,
                           by = c("Education", "Marital_Status"))
 
 imputed_data$Income.x <- imputed_data$Income.y
 imputed_data <- imputed_data %>% select(-Income.y)
 colnames(imputed_data)[5] <- "Income"
 
-marketing <- full_join(marketing,                             
-                       imputed_data, 
+marketing <- full_join(marketing,
+                       imputed_data,
                        by = c('ID',
                               'Year_Birth',
                               'Education',
@@ -65,6 +77,10 @@ marketing <- full_join(marketing,
                               'Response',
                               'Complain',
                               'Country'))
-marketing <- marketing  %>%                                  
+marketing <- marketing  %>%
   mutate(Income = coalesce(Income.x, Income.y)) %>%
   select(-c("Income.x", "Income.y"))
+
+source("ui.R")
+source("server.R")
+shinyApp(ui, server)
