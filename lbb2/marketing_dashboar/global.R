@@ -21,7 +21,8 @@ library(scales)
 library(echarts4r)
 library(highcharter)
 library(htmlwidgets)
-
+library(magrittr)
+library(glue)
 
 # Data Preparation
 marketing <- read.csv("marketing_data.csv")
@@ -80,6 +81,25 @@ marketing <- full_join(marketing,
 marketing <- marketing  %>%
   mutate(Income = coalesce(Income.x, Income.y)) %>%
   select(-c("Income.x", "Income.y"))
+
+marketing <- marketing %>% 
+  mutate(Age = as.integer(format(Sys.Date(), "%Y")) - Year_Birth)
+
+convert_age <- function(age){ 
+  if(age >= 58){
+    age <- ">= Boomers II" 
+  }else if(age >= 42){
+    age <- "Gen X"
+  }else if (age >= 26){
+    age <- "Millennials"
+  } else {
+    age <- "Gen Z"
+  }
+}
+
+marketing$Era <- sapply(X = marketing$Age, 
+                        FUN = convert_age) 
+marketing$Era <- as.factor(marketing$Era)
 
 source("ui.R")
 source("server.R")

@@ -1,6 +1,6 @@
 .content-wrapper, .right-side {
     background-color: #121212;
-    color: #072227;
+    color: #f0f0f0;
 }
 
 .box {
@@ -52,4 +52,12 @@
 
 .info-box {
     background-color: #262625!important;
+}
+
+.shiny-input-container .control-label{
+    color: #f0f0f0;
+}
+
+.selectize-input.full {
+    background-color: #e0e0e0;
 }

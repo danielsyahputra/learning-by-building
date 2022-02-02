@@ -29,6 +29,38 @@ peopleItem <- tabItem(
         width = 4,
         outputId = "customerPurchases"
       )
+    ),
+    
+    # Chart
+    fluidRow(
+      box(
+        selectInput(
+          inputId = "groupBySelector",
+          label = shiny::HTML("<span style='color: #f0f0f0'>Group by:</span>"),
+          choices = c("Marital Status", "Education", "Generation"),
+          selected = "Marital Status",
+        )
+      ),
+      box(
+        selectInput(
+          inputId = "chartTypeSelector",
+          label = shiny::HTML("<span style='color: #f0f0f0'>Chart type:</span>"),
+          choices = c("Bar", "Donuth"),
+          selected = "Donuth",
+        )
+      )
+    ),
+    fluidRow(
+      box(
+        width=12,
+        echarts4rOutput(outputId = "incomeBy")
+      )
+    ),
+    fluidRow(
+      box(
+        width = 12,
+        echarts4rOutput(outputId = "spentBy")
+      )
     )
   )
 )
@@ -45,7 +77,42 @@ body <- dashboardBody(
 
 ui <- dashboardPage(header, sidebar, body)
 
-
+# Select Input
+# fluidRow(
+#   box(
+#     width = 4,
+#     height = 80,
+#     selectInput(
+#       inputId = "maritalStatusSelector",
+#       label = shiny::HTML("<span style='color: #f0f0f0'>Select marital status:</span>"),
+#       choices = levels(marketing$Marital_Status),
+#       selected = "Married",
+#       multiple = T
+#     )
+#   ),
+#   box(
+#     width = 4,
+#     height = 80,
+#     selectInput(
+#       inputId = "educationSelector",
+#       label = shiny::HTML("<span style='color: #f0f0f0'>Select education:</span>"),
+#       choices = levels(marketing$Education),
+#       selected = "Basic",
+#       multiple = T
+#     )
+#   ),
+#   box(
+#     width = 4,
+#     height = 80,
+#     selectInput(
+#       inputId = "eraSelector",
+#       label = shiny::HTML("<span style='color: #f0f0f0'>Select generation: </span>"),
+#       choices = levels(marketing$Era),
+#       selected = "Gen X",
+#       multiple = T
+#     )
+#   )
+# ),
 
 
 # style <- "

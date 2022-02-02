@@ -1,10 +1,11 @@
 server <- function(input, output) {
   
+
   # VALUE BOX SPARK ---------------------------------------------
   # Reference: https://jkunst.com/blog/posts/2020-06-26-valuebox-and-sparklines/
   
   valueBoxSpark <- function(value, title, sparkobj = NULL, subtitle, info = NULL, 
-                            icon = NULL, color = "teal", width = 4, href = NULL){
+                            icon = NULL, color = "teal", width = 12, href = NULL){
     shinydashboard:::validateColor(color)
     if (!is.null(icon))
       shinydashboard:::tagAssert(icon, type = "i")
@@ -55,11 +56,14 @@ server <- function(input, output) {
       type = "area", name = "Income",
       color = "#db902e"
     ) %>% 
+      hc_xAxis(min = 0) %>% 
       hc_size(height = 200) %>% 
-      hc_title(text = "Customer's Income",
-               style = list(color = "#f0f0f0")) %>% 
+      hc_title(text = "Customers Income",
+               style = list(color = "#f0f0f0", fontSize =16)) %>% 
       hc_tooltip(crosshairs = TRUE,
-                 borderWidth = 2)
+                 borderWidth = 2,
+                 pointFormat = '<span style="color:{series.color}">{series.name}</span>:
+                       <b>${point.x:.4f}</b><br/>')
     
     vbCustomerIncome <- valueBoxSpark(
       value = dollar(mean(marketing$Income), 
@@ -71,14 +75,217 @@ server <- function(input, output) {
       info = "This is the customer income based on marketing data",
       subtitle = NULL,
       icon = icon("money-bill-wave"),
-      color = "teal",
       href = NULL
     )
     
     vbCustomerIncome
   })
   
-  # PEOPLE TAB - END -----------------------------------------------
+  output$customerSpentMoney <- renderValueBox({
+    customerSpent <- marketing %>% 
+      select(MntWines, MntFruits, MntMeatProducts, MntFishProducts, MntSweetProducts, MntGoldProds) %>% 
+      mutate(TotalSpent = MntWines + MntFruits + MntMeatProducts + 
+               MntFishProducts + MntSweetProducts + MntGoldProds)
+    
+    hcCustomerSpent <- hchart(
+      density(customerSpent$TotalSpent),
+      type = "area", name = "Total Spent",
+      color = "#db902e"
+    ) %>% 
+      hc_xAxis(min = 0,
+               color = "#f0f0f0") %>% 
+      hc_size(height = 200) %>% 
+      hc_title(text = "Customers Total Spent",
+               style = list(color = "#f0f0f0", fontSize =16)) %>% 
+      hc_tooltip(crosshairs = TRUE,
+                 borderWidth = 2,
+                 pointFormat = '<span style="color:{series.color}">{series.name}</span>:
+                       <b>${point.x:.4f}</b><br/>')
+    
+    vbCustomerSpent <- valueBoxSpark(
+      value = dollar(mean(customerSpent$TotalSpent), 
+                     prefix = "$", big.mark = ",",
+                     decimal.mark = ".",
+                     accuracy = 0.01),
+      title = toupper("AVERAGE CUSTOMER SPENT"),
+      sparkobj = hcCustomerSpent,
+      info = "This is the total customer spent based on marketing data",
+      subtitle = NULL,
+      icon = icon("money-bill-wave"),
+      href = NULL
+    )
+    
+    vbCustomerSpent
+    
+  })
+  
+  output$customerPurchases <- renderValueBox({
+    customerPurchases <- marketing %>% 
+      select(NumWebPurchases, NumCatalogPurchases, NumStorePurchases) %>% 
+      mutate(TotalPurchases = NumWebPurchases + NumCatalogPurchases + NumStorePurchases)
+    
+    hcCustomerPurchases <- hchart(
+      density(customerPurchases$TotalPurchases),
+      type = "area", name = "Total Purchases",
+      color = "#db902e"
+    ) %>% 
+      hc_xAxis(min = 0,
+               color = "#f0f0f0") %>% 
+      hc_size(height = 200) %>% 
+      hc_title(text = "Customers Total Purchases",
+               style = list(color = "#f0f0f0", fontSize =16)) %>% 
+      hc_tooltip(crosshairs = TRUE,
+                 borderWidth = 2,
+                 pointFormat = '<span style="color:{series.color}">{series.name}</span>:
+                       <b>{point.x:.1f}</b><br/>')
+    
+    vbCustomerPurchases <- valueBoxSpark(
+      value = dollar(mean(customerPurchases$TotalPurchases), 
+                     prefix = NULL, big.mark = ",",
+                     decimal.mark = ".",
+                     accuracy = 0.1),
+      title = toupper("AVERAGE CUSTOMER PURCHASES"),
+      sparkobj = hcCustomerPurchases,
+      info = "This is the total customer purchases based on marketing data",
+      subtitle = NULL,
+      icon = icon("money-bill-wave"),
+      href = NULL
+    )
+    
+    vbCustomerPurchases
+  })
+  
+  # ADDITIONAL FUNCTION - getCustomDataCustomers ------------------------------
+  getCustomDataCustomers <- function(input, feature) {
+    param <- input$groupBySelector
+    data <- "" 
+    if (feature == "Income") {
+      if (param == "Marital Status") {
+        data <- marketing %>% 
+          group_by(Marital_Status)
+      } else if (param == "Education") {
+        data <- marketing %>% 
+          group_by(Education) 
+      } else {
+        data <- marketing %>% 
+          group_by(Era)
+      }
+      data <- data %>% 
+        summarise(MeanIncome = mean(Income)) %>% 
+        arrange(MeanIncome)
+      return(data)
+    } else {
+      data <- marketing %>% 
+        mutate(TotalSpent = MntWines + MntFruits + MntMeatProducts + 
+                 MntFishProducts + MntSweetProducts + MntGoldProds)
+      if (param == "Marital Status") {
+        data <- data %>% 
+          group_by(Marital_Status)
+      } else if (param == "Education") {
+        data <- data %>% 
+          group_by(Education)
+      } else {
+        data <- data %>% 
+          group_by(Era)
+      }
+      data <- data %>% 
+        summarise(MeanTotalSpent = mean(TotalSpent)) %>% 
+        arrange(desc(MeanTotalSpent))
+      return(data)
+    }
+  }
+  # ADDITIONAL FUNCTION - getCustomDataCustomers - END -----------------------
+  
+  output$incomeBy <- renderEcharts4r({
+    param <- input$groupBySelector
+    data <- getCustomDataCustomers(input = input, feature = "Income")
+    
+    plot <- ""
+    if (param == "Marital Status") {
+      plot <- data %>% 
+        e_chart(Marital_Status)
+    } else if (param == "Education") {
+      plot <- data %>% 
+        e_chart(Education)
+    } else {
+      plot <- data %>% 
+        e_chart(Era)
+    }
+    plot <- plot %>% 
+      e_pie(MeanIncome, radius = c("50%", "75%")) %>% 
+      e_theme_custom("www/chart_theme.json") %>% 
+      e_title(
+        text = glue("Mean Income by {param}"),
+        left = "center",
+        top = "0"
+      ) %>% 
+      e_legend(F) %>% 
+      e_tooltip(
+        trigger = "item",
+        formatter = JS("
+                    function(params){return(
+                        '<b>' + params.name + '</b>'
+                           + ' : $'
+                           + (params.value).toLocaleString('en-US', 
+                           {maximumFractionDigits : 2, minimumFractionDigits: 2})
+                           )}
+                           ")
+      )
+    plot
+  })
+  
+  
+  
+  output$spentBy <- renderEcharts4r({
+    
+    param <- input$groupBySelector
+    data <- getCustomDataCustomers(input = input, feature = "Spent")
+    
+    plot <- ""
+    
+    if (param == "Marital Status") {
+      plot <- data %>% 
+        e_chart(Marital_Status)
+    } else if (param == "Education") {
+      plot <- data %>% 
+        e_chart(Education)
+    } else {
+      plot <- data %>% 
+        e_chart(Era)
+    }
+    plot <- plot %>% 
+      e_bar(MeanTotalSpent) %>% 
+      e_flip_coords() %>% 
+      e_y_axis(inverse = T) %>% 
+      e_theme_custom("www/chart_theme.json") %>% 
+      e_title(
+        text = glue("Mean Total Spent by {param}"),
+        left = "center",
+        top = "0"
+      ) %>% 
+      e_legend(show = F) %>% 
+      e_axis_labels(x = "Mean Total Spent") %>% 
+      e_x_axis(
+        name = "Mean Total Spent",
+        nameLocation = "center",
+        nameGap = "25",
+        formatter = e_axis_formatter(style = c("currency"), currency = "USD")) %>%
+      e_tooltip(
+        trigger = "item",
+        formatter = JS(
+          "
+       function(params){return(
+       '<b>' + params.name + '</b>'
+       + ' : $' 
+       + params.value[0]
+       )}
+       "
+        )
+      )
+    plot
+  })
+  
+  # PEOPLE / CUSTOMER TAB - END -----------------------------------------------
 }
 
 
