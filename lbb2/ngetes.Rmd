@@ -376,7 +376,34 @@ colnames(productSpent) <- c("Marital_Status", "Education", "Era",
 ```
 
 ```{r}
-
+productSpent %>% 
+  e_charts() %>% 
+  e_histogram(Wines) %>% 
+  e_theme_custom("marketing_dashboar/www/chart_theme.json") %>% 
+  e_title(
+    text = "Customers Amount Spent for Wines",
+    left = "center",
+    top = "0"
+  ) %>% 
+  e_legend(top = "30") %>% 
+  e_axis_labels(x = "Amount Spent") %>% 
+  e_x_axis(
+    name = "Amount Spent",
+    nameLocation = "center",
+    nameGap = "25",
+    formatter = e_axis_formatter(style = c("currency"), currency = "USD")) %>%
+  e_tooltip(
+    trigger = "item",
+    formatter = JS(
+      "
+       function(params){return(
+       '<b>Freq</b>'
+       + ' : ' 
+       + params.value[1]
+       )}
+       "
+    )
+  )
 ```
 
 

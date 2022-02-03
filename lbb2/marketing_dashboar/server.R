@@ -395,6 +395,64 @@ server <- function(input, output) {
     plot
   })
   
+  output$histProducts <- renderEcharts4r({
+    productType = input$productTypeSelector
+    productSpent <- marketing %>% 
+      select(Marital_Status,Education, Era, MntWines, MntFruits, MntMeatProducts,
+             MntFishProducts, MntSweetProducts, MntGoldProds)
+    
+    colnames(productSpent) <- c("Marital_Status", "Education", "Era",
+                                "Wines", "Fruits", "Meats", 
+                                "Fishs", "Sweets", "Gold")
+    plot <- productSpent %>% 
+      e_charts()
+    
+    if (productType == "Wines") {
+      plot <- plot %>% 
+        e_histogram(Wines)
+    } else if (productType == "Fruits") {
+      plot <- plot %>% 
+        e_histogram(Fruits)
+    } else if (productType == "Meats") {
+      plot <- plot %>% 
+        e_histogram(Meats)
+    } else if (productType == "Fishs") {
+      plot <- plot %>% 
+        e_histogram(Fishs)
+    } else if (productType == "Sweets") {
+      plot <- plot %>% 
+        e_histogram(Sweets)
+    } else {
+      plot <- plot %>% 
+        e_histogram(Gold)
+    }
+    plot <- plot %>% 
+      e_theme_custom("www/chart_theme.json") %>% 
+      e_title(
+        text = glue("Customers Amount Spent - {productType}"),
+        left = "center",
+        top = "0"
+      ) %>% 
+      e_axis_labels(x = "Amount Spent") %>% 
+      e_x_axis(
+        name = "Amount Spent",
+        nameLocation = "center",
+        nameGap = "25",
+        formatter = e_axis_formatter(style = c("currency"), currency = "USD")) %>%
+      e_tooltip(
+        trigger = "item",
+        formatter = JS(
+          "
+       function(params){return(
+       '<b>Freq</b>'
+       + ' : ' 
+       + params.value[1]
+       )}
+       "
+        )
+      )
+  })
+  
   # PRODUCTS TAB - END -----------------------------------------------
 }
 

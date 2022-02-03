@@ -90,7 +90,19 @@ productItem <- tabItem(
     fluidRow(
       box(
         width = 12,
-        echarts4rOutput(outputId = "purchasesEachProduct")
+        radioButtons(
+          inputId = "productTypeSelector",
+          label = shiny::HTML("<span style='color: #f0f0f0'>Choose product type:</span>"),
+          choices = c("Wines", "Fruits", "Meats", "Fishs", "Sweets", "Gold"),
+          selected = "Wines",
+          inline = T
+        )
+      )
+    ),
+    fluidRow(
+      box(
+        width = 12,
+        echarts4rOutput(outputId = "histProducts")
       )
     )
   )
