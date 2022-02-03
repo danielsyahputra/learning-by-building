@@ -365,3 +365,99 @@ getCustomDataCustomers <- function(input, feature) {
 getCustomDataCustomers(input = "Education", feature = "Income")
 ```
 
+```{r}
+productSpent <- marketing %>% 
+  select(Marital_Status,Education, Era, MntWines, MntFruits, MntMeatProducts,
+         MntFishProducts, MntSweetProducts, MntGoldProds)
+
+colnames(productSpent) <- c("Marital_Status", "Education", "Era",
+                            "Wines", "Fruits", "Meats", 
+                            "Fishs", "Sweets", "Gold")
+```
+
+```{r}
+
+```
+
+
+```{r}
+productSpent <- productSpent %>% 
+  group_by(Marital_Status) %>% 
+  summarise(Wines = mean(Wines), 
+            Fruits = mean(Fruits),
+            Meats = mean(Meats),
+            Fishs = mean(Fishs),
+            Sweets = mean(Sweets),
+            Gold = mean(Gold)) %>% 
+  mutate(MeanTotalSpent = Wines + Fruits + Meats + Fishs + Sweets + Gold) %>% 
+  arrange(desc(MeanTotalSpent))
+```
+
+
+```{r}
+productSpent %>% 
+  e_chart(Marital_Status) %>% 
+  e_bar(Wines, stack = "grp") %>% 
+  e_bar(Fruits, stack = "grp") %>% 
+  e_bar(Meats, stack = "grp") %>% 
+  e_bar(Fishs, stack = "grp") %>% 
+  e_bar(Sweets, stack = "grp") %>% 
+  e_bar(Gold, stack = "grp") %>% 
+  e_flip_coords() %>% 
+  e_y_axis(inverse = T) %>% 
+  e_theme_custom("marketing_dashboar/www/chart_theme.json") %>% 
+  e_title(
+    text = "Mean Total Spent of Each Product",
+    left = "center",
+    top = "0"
+  ) %>% 
+  e_legend(top = "30") %>% 
+  e_axis_labels(x = "Mean Total Spent") %>% 
+  e_x_axis(
+    name = "Mean Total Spent",
+    nameLocation = "center",
+    nameGap = "25",
+    formatter = e_axis_formatter(style = c("currency"), currency = "USD")) %>%
+  e_tooltip(
+    trigger = "item",
+    formatter = JS(
+      "
+       function(params){return(
+       '<b>' + params.name + '</b>'
+       + ' : $' 
+       + params.value[0]
+       )}
+       "
+    )
+  )
+```
+
+```{r}
+```
+
+
+```{r}
+productPurchasesPlatform <- marketing %>% 
+  select(MntWines, MntFruits, MntMeatProducts,
+         MntFishProducts, MntSweetProducts, MntGoldProds,
+         NumWebPurchases, NumCatalogPurchases, NumStorePurchases)
+
+colnames(productPurchasesPlatform) <- 
+  c("Wines", "Fruits", "Meats", 
+    "Fishs", "Sweets", "Gold",
+    "Web", "Catalog", "Store")
+
+# productPurchasesPlatform <- productPurchasesPlatform %>% 
+#   pivot_longer(cols = c("Wines", "Fruits", "Meats", 
+#                         "Fishs", "Sweets", "Gold"),
+#                names_to = "ProductType") %>% 
+#   select(-value)
+# 
+# productPurchasesPlatform %>% 
+#   group_by(ProductType) %>% 
+#   summarise(Web = mean(Web),
+#             Catalog = mean(Catalog),
+#             Store = mean(Store))
+productPurchasesPlatform
+```
+

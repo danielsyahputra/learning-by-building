@@ -286,6 +286,116 @@ server <- function(input, output) {
   })
   
   # PEOPLE / CUSTOMER TAB - END -----------------------------------------------
+  
+  # PRODUCTS TAB - START -----------------------------------------------
+  
+  output$spentEachProduct <- renderEcharts4r({
+    
+    param <- input$groupByInputSelector
+    orderBy <- input$orderByButton
+    
+    productSpent <- marketing %>% 
+      select(Marital_Status,Education, Era, MntWines, MntFruits, MntMeatProducts,
+             MntFishProducts, MntSweetProducts, MntGoldProds)
+    
+    colnames(productSpent) <- c("Marital_Status", "Education", "Era",
+                                "Wines", "Fruits", "Meats", 
+                                "Fishs", "Sweets", "Gold")
+    
+    if (param == "Marital Status") {
+      productSpent <- productSpent %>% 
+        group_by(Marital_Status)
+    } else if (param == "Education") {
+      productSpent <- productSpent %>% 
+        group_by(Education)
+    } else {
+      productSpent <- productSpent %>% 
+        group_by(Era)
+    }
+    
+    productSpent <- productSpent %>% 
+      summarise(Wines = mean(Wines), 
+                Fruits = mean(Fruits),
+                Meats = mean(Meats),
+                Fishs = mean(Fishs),
+                Sweets = mean(Sweets),
+                Gold = mean(Gold)) %>% 
+      mutate(MeanTotalSpent = Wines + Fruits + Meats + Fishs + Sweets + Gold)
+    
+    if (orderBy == "Wines") {
+      productSpent <- productSpent %>% 
+        arrange(desc(Wines))
+    } else if (orderBy == "Fruits") {
+      productSpent <- productSpent %>% 
+        arrange(desc(Fruits))
+    } else if (orderBy == "Meats") {
+      productSpent <- productSpent %>% 
+        arrange(desc(Meats))
+    } else if (orderBy == "Fishs") {
+      productSpent <- productSpent %>% 
+        arrange(desc(Fishs))
+    } else if (orderBy == "Sweets") {
+      productSpent <- productSpent %>% 
+        arrange(desc(Sweets))
+    } else if (orderBy == "Gold") {
+      productSpent <- productSpent %>% 
+        arrange(desc(Gold))
+    } else {
+      productSpent <- productSpent %>% 
+        arrange(desc(MeanTotalSpent))
+    }
+    
+    plot <- ""
+    
+    if (param == "Marital Status") {
+      plot <- productSpent %>% 
+        e_chart(Marital_Status)
+    } else if (param == "Education") {
+      plot <- productSpent %>% 
+        e_chart(Education)
+    } else {
+      plot <- productSpent %>% 
+        e_chart(Era)
+    }
+    
+    plot <- plot %>% 
+      e_bar(Wines, stack = "grp") %>% 
+      e_bar(Fruits, stack = "grp") %>% 
+      e_bar(Meats, stack = "grp") %>% 
+      e_bar(Fishs, stack = "grp") %>% 
+      e_bar(Sweets, stack = "grp") %>% 
+      e_bar(Gold, stack = "grp") %>% 
+      e_flip_coords() %>% 
+      e_y_axis(inverse = T) %>% 
+      e_theme_custom("www/chart_theme.json") %>% 
+      e_title(
+        text = glue("Mean Total Spent by {param}"),
+        left = "center",
+        top = "0"
+      ) %>% 
+      e_legend(top = "30") %>% 
+      e_axis_labels(x = "Mean Total Spent") %>% 
+      e_x_axis(
+        name = "Mean Total Spent",
+        nameLocation = "center",
+        nameGap = "25",
+        formatter = e_axis_formatter(style = c("currency"), currency = "USD")) %>%
+      e_tooltip(
+        trigger = "item",
+        formatter = JS(
+          "
+       function(params){return(
+       '<b>' + params.name + '</b>'
+       + ' : $' 
+       + params.value[0]
+       )}
+       "
+        )
+      )
+    plot
+  })
+  
+  # PRODUCTS TAB - END -----------------------------------------------
 }
 
 

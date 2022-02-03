@@ -34,19 +34,13 @@ peopleItem <- tabItem(
     # Chart
     fluidRow(
       box(
-        selectInput(
+        width = 12,
+        radioButtons(
           inputId = "groupBySelector",
           label = shiny::HTML("<span style='color: #f0f0f0'>Group by:</span>"),
           choices = c("Marital Status", "Education", "Generation"),
           selected = "Marital Status",
-        )
-      ),
-      box(
-        selectInput(
-          inputId = "chartTypeSelector",
-          label = shiny::HTML("<span style='color: #f0f0f0'>Chart type:</span>"),
-          choices = c("Bar", "Donuth"),
-          selected = "Donuth",
+          inline = T
         )
       )
     ),
@@ -65,13 +59,51 @@ peopleItem <- tabItem(
   )
 )
 
+productItem <- tabItem(
+  tabName = "productItem",
+  fluidPage(
+    fluidRow(
+      box(
+        width = 12,
+        selectInput(
+          inputId = "groupByInputSelector",
+          label = shiny::HTML("<span style='color: #f0f0f0'>Group mean total spent by:</span>"),
+          choices = c("Marital Status", "Education", "Generation"),
+          selected = "Marital Status"
+        ),
+        selectInput(
+          inputId = "orderByButton",
+          label = shiny::HTML("<span style='color: #f0f0f0'>Order mean total spent by:</span>"),
+          choices = c("Mean Total Spent", "Wines", 
+                      "Fruits", "Meats", "Fishs",
+                      "Sweets", "Gold"),
+          selected = "Mean Total Spent"
+        )
+      )
+    ),
+    fluidRow(
+      box(
+        width = 12,
+        echarts4rOutput(outputId = "spentEachProduct")
+      )
+    ),
+    fluidRow(
+      box(
+        width = 12,
+        echarts4rOutput(outputId = "purchasesEachProduct")
+      )
+    )
+  )
+)
+
 body <- dashboardBody(
   # CSS
   tags$link(rel = "stylesheet", 
             type = "text/css",
             href = "style.css"),
   tabItems(
-    peopleItem
+    peopleItem,
+    productItem
   )
 )
 
