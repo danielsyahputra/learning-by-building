@@ -127,6 +127,34 @@ platformItem <- tabItem(
         width = 4,
         outputId = "storePurchases"
       )
+    ),
+    fluidRow(
+      box(
+        width = 6,
+        radioButtons(
+          inputId = "platformTypeSelector",
+          label = shiny::HTML("<span style='color: #f0f0f0'>Choose platform type:</span>"),
+          choices = c("Web", "Catalog", "Store", "All Platform"),
+          selected = "All Platform",
+          inline = T
+        )
+      ),
+      box(
+        width = 6,
+        radioButtons(
+          inputId = "groupPlatformSelector",
+          label = shiny::HTML("<span style='color: #f0f0f0'>Group total purchases by:</span>"),
+          choices = c("Marital Status", "Education", "Generation"),
+          selected = "Marital Status",
+          inline = T
+        )
+      )
+    ),
+    fluidRow(
+      box(
+        width = 12,
+        echarts4rOutput(outputId = "platformChart")
+      )
     )
   )
 )
@@ -136,6 +164,7 @@ body <- dashboardBody(
   tags$link(rel = "stylesheet", 
             type = "text/css",
             href = "style.css"),
+  tags$script(HTML("$('body').addClass('fixed');")),
   tabItems(
     peopleItem,
     productItem,

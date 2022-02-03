@@ -567,6 +567,62 @@ hcStorePurchases <- hchart(
       icon = icon("store"),
       href = NULL
     )
-    vbStorePurchases
+    
 ```
+
+```{r}
+platformPurchases <- marketing %>% 
+  select(Marital_Status, Education, Era,
+         NumWebPurchases, NumCatalogPurchases, NumStorePurchases)
+
+colnames(platformPurchases) <- c("Marital_Status", "Education", "Era",
+                                 "Web", "Catalog", "Store")
+
+platformPurchases %>% 
+  group_by(Marital_Status) %>% 
+  summarise(Web = sum(Web),
+            Catalog = sum(Catalog),
+            Store = sum(Store)) %>% 
+  mutate(TotalPurchases = Web + Store + Catalog) %>% 
+  arrange(desc(Web)) %>% 
+  e_chart(Marital_Status) %>% 
+  e_pie(Web, roseType = "radius") %>% 
+  e_theme_custom("marketing_dashboar/www/chart_theme.json") %>% 
+  e_title(
+        text = glue("Total Purchases on Web"),
+        left = "center",
+        top = "0"
+      ) %>% 
+  e_legend(F) %>% 
+  e_tooltip(
+    trigger = "item",
+    formatter = JS("
+                function(params){return(
+                 '<b>' + params.name + '</b>'
+                 + ' : ' 
+                 + params.value
+                 )}
+                       ")
+  )
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

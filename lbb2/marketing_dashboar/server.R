@@ -541,6 +541,99 @@ server <- function(input, output) {
     vbStorePurchases
   })
   
+  output$platformChart <- renderEcharts4r({
+    
+    group <- input$groupPlatformSelector
+    platform <- input$platformTypeSelector
+    
+    platformPurchases <- marketing %>% 
+      select(Marital_Status, Education, Era,
+             NumWebPurchases, NumCatalogPurchases, NumStorePurchases)
+    
+    colnames(platformPurchases) <- c("Marital_Status", "Education", "Era",
+                                     "Web", "Catalog", "Store")
+    
+    if (group == "Marital Status") {
+      platformPurchases <- platformPurchases %>% 
+        group_by(Marital_Status)
+    } else if (group == "Education") {
+      platformPurchases <- platformPurchases %>% 
+        group_by(Education)
+    } else {
+      platformPurchases <- platformPurchases %>% 
+        group_by(Era)
+    }
+    
+    platformPurchases <- platformPurchases %>% 
+      summarise(Web = sum(Web),
+                Catalog = sum(Catalog),
+                Store = sum(Store)) %>% 
+      mutate(TotalPurchases = Web + Store + Catalog)
+    
+    if (platform == "Web") {
+      platformPurchases <- platformPurchases %>% 
+        arrange(desc(Web))
+    } else if (platform == "Catalog") {
+      platformPurchases <- platformPurchases %>% 
+        arrange(desc(Catalog))
+    } else if (platform == "Store") {
+      platformPurchases <- platformPurchases %>% 
+        arrange(desc(Store))
+    } else {
+      platformPurchases <- platformPurchases %>% 
+        arrange(desc(TotalPurchases))
+    }
+    
+    plot <- ""
+    
+    if (group == "Marital Status") {
+      plot <- platformPurchases %>% 
+        e_chart(Marital_Status)
+    } else if (group == "Education") {
+      plot <- platformPurchases %>% 
+        e_chart(Education)
+    } else {
+      plot <- platformPurchases %>% 
+        e_chart(Era)
+    }
+    
+    if (platform == "Web") {
+      plot <- plot %>% 
+        e_pie(Web, roseType = "radius")
+    } else if (platform == "Catalog") {
+      plot <- plot %>% 
+        e_pie(Catalog, roseType = "radius")
+    } else if (platform == "Store") {
+      plot <- plot %>% 
+        e_pie(Store, roseType = "radius")
+    } else {
+      plot <- plot %>% 
+        e_pie(TotalPurchases, roseType = "radius")
+    }
+    
+    plot <- plot %>% 
+      e_theme_custom("www/chart_theme.json") %>% 
+      e_title(
+        text = glue("Total Purchases on {platform} by {group}"),
+        left = "center",
+        top = "0"
+      ) %>% 
+      e_legend(F) %>% 
+      e_tooltip(
+        trigger = "item",
+        formatter = JS("
+                function(params){return(
+                 '<b>' + params.name + '</b>'
+                 + ' : ' 
+                 + params.value
+                 )}
+                       ")
+      )
+    plot
+  })
+  
+  
+  
   # PLATFORM TAB - END -----------------------------------------------
 }
 
