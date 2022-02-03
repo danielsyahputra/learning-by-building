@@ -488,3 +488,85 @@ colnames(productPurchasesPlatform) <-
 productPurchasesPlatform
 ```
 
+```{r}
+hcWebPurchases <- hchart(
+  density(marketing$NumWebPurchases),
+  type = "area",
+  name = "Web Purchases",
+  color = "#db902e"
+) %>% 
+  hc_xAxis(min = 0) %>% 
+  hc_size(height = 200) %>% 
+  hc_title(text = "Web Purchases",
+           style = list(color = "#f0f0f0", fontSize =16)) %>% 
+  hc_tooltip(borderWidth = 2,
+             crosshairs = T,
+             pointFormat = '<span style="color:{series.color}">{series.name}</span>:
+                       <b>{point.x:.1f}</b><br/>')
+
+vbWebPurchases <- valueBoxSpark(
+  value = sum(marketing$NumWebPurchases),
+  title = toupper("TOTAL WEB PURCHASES"),
+  sparkobj = hcWebPurchases,
+  info = "Number of purchases made through the company's website",
+  subtitle = NULL,
+  icon = icon("store"),
+  href = NULL
+)
+```
+
+```{r}
+hcCatalogPurchases <- hchart(
+  density(marketing$NumCatalogPurchases),
+  type = "area",
+  name = "Catalog Purchases",
+  color = "#db902e"
+) %>% 
+  hc_xAxis(min = 0) %>% 
+  hc_size(height = 200) %>% 
+  hc_title(text = "Catalog Purchases",
+           style = list(color = "#f0f0f0", fontSize =16)) %>% 
+  hc_tooltip(borderWidth = 2,
+             crosshairs = T,
+             pointFormat = '<span style="color:{series.color}">{series.name}</span>:
+                       <b>{point.x:.1f}</b><br/>')
+
+vbWebPurchases <- valueBoxSpark(
+  value = sum(marketing$NumCatalogPurchases),
+  title = toupper("TOTAL CATALOG PURCHASES"),
+  sparkobj = hcCatalogPurchases,
+  info = "Number of purchases made using catalog",
+  subtitle = NULL,
+  icon = icon("store"),
+  href = NULL
+)
+```
+
+```{r}
+hcStorePurchases <- hchart(
+      density(marketing$NumStorePurchases),
+      type = "area",
+      name = "Store Purchases",
+      color = "#db902e"
+    ) %>% 
+      hc_xAxis(min = 0) %>% 
+      hc_size(height = 200) %>% 
+      hc_title(text = "Store Purchases",
+               style = list(color = "#f0f0f0", fontSize =16)) %>% 
+      hc_tooltip(borderWidth = 2,
+                 crosshairs = T,
+                 pointFormat = '<span style="color:{series.color}">{series.name}</span>:
+                       <b>{point.x:.1f}</b><br/>')
+    
+    vbStorePurchases <- valueBoxSpark(
+      value = sum(marketing$NumStorePurchases),
+      title = toupper("TOTAL STORE PURCHASES"),
+      sparkobj = hcStorePurchases,
+      info = "Number of purchases made directly in store",
+      subtitle = NULL,
+      icon = icon("store"),
+      href = NULL
+    )
+    vbStorePurchases
+```
+

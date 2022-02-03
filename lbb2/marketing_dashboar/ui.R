@@ -9,7 +9,10 @@ sidebar <- dashboardSidebar(
              icon = icon("users")),
     menuItem(text = "Product",
              tabName = "productItem",
-             icon = icon("box-open"))
+             icon = icon("box-open")),
+    menuItem(text = "Platform",
+             tabName = "platformItem",
+             icon = icon("store"))
   )
 )
 
@@ -108,6 +111,26 @@ productItem <- tabItem(
   )
 )
 
+platformItem <- tabItem(
+  tabName = "platformItem",
+  fluidPage(
+    fluidRow(
+      valueBoxOutput(
+        width = 4,
+        outputId = "webPurchases"
+      ),
+      valueBoxOutput(
+        width = 4,
+        outputId = "catalogPurchases"
+      ),
+      valueBoxOutput(
+        width = 4,
+        outputId = "storePurchases"
+      )
+    )
+  )
+)
+
 body <- dashboardBody(
   # CSS
   tags$link(rel = "stylesheet", 
@@ -115,7 +138,8 @@ body <- dashboardBody(
             href = "style.css"),
   tabItems(
     peopleItem,
-    productItem
+    productItem,
+    platformItem
   )
 )
 
