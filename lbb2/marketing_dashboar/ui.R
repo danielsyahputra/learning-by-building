@@ -170,6 +170,23 @@ promotionItem <- tabItem(
         width = 12,
         echarts4rOutput(outputId = "campaignSuccessRate")
       )
+    ),
+    fluidRow(
+      box(
+        width = 12,
+        selectInput(
+          inputId = "successRateSelector",
+          label = shiny::HTML("<span style='color: #f0f0f0'>Group success rate by:</span>"),
+          choices = c("Day", "Month", "Year"),
+          selected = "Day"
+        )
+      )
+    ),
+    fluidRow(
+      box(
+        width = 12,
+        echarts4rOutput(outputId = "totalAccceptedEachCampaign")
+      )
     )
   )
 )

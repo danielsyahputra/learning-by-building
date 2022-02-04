@@ -111,6 +111,13 @@ marketing$CountryName <- sapply(X = marketing$Country,
                                 FUN = convert_country)
 marketing$CountryName <- as.factor(marketing$CountryName)
 
+marketing <- marketing %>% 
+  mutate(DayEnroll = wday(Dt_Customer, label = T, abbr = F),
+         MonthEnroll = month(Dt_Customer, label = T, abbr = F),
+         YearEnroll = year(Dt_Customer),
+         DayEnroll = as.character(DayEnroll),
+         MonthEnroll = as.character(MonthEnroll),
+         YearEnroll = as.factor(YearEnroll))
 
 source("ui.R")
 source("server.R")

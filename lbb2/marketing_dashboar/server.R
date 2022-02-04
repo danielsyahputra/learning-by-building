@@ -700,6 +700,78 @@ server <- function(input, output) {
       )
   })
   
+  output$totalAccceptedEachCampaign <- renderEcharts4r({
+    group <- input$successRateSelector
+    
+    campaignData <- marketing %>% 
+      select(AcceptedCmp1, AcceptedCmp2, AcceptedCmp3,
+             AcceptedCmp4, AcceptedCmp5, DayEnroll,
+             MonthEnroll, YearEnroll)
+    
+    colnames(campaignData) <-  c("Campaign 1", "Campaign 2", "Campaign 3",
+                                 "Campaign 4", "Campaign 5", "Day", "Month", "Year")
+    
+    if (group == "Day") {
+      campaignData <- campaignData %>% 
+        group_by(Day)
+    } else if (group == "Month") {
+      campaignData <- campaignData %>% 
+        group_by(Month)
+    } else {
+      campaignData <- campaignData %>% 
+        group_by(Year)
+    }
+    
+    campaignData <- campaignData %>% 
+      summarise(Campaign1 = sum(`Campaign 1`),
+                Campaign2 = sum(`Campaign 2`),
+                Campaign3 = sum(`Campaign 3`),
+                Campaign4 = sum(`Campaign 4`),
+                Campaign5 = sum(`Campaign 5`)) %>% 
+      mutate(TotalAccepted = Campaign1 + Campaign2 + Campaign3 +
+               Campaign4 + Campaign5) %>% 
+      arrange(desc(TotalAccepted))
+    
+    plot <- ""
+    
+    if (group == "Day") {
+      plot <- campaignData %>% 
+        e_chart(Day)
+    } else if (group == "Month") {
+      plot <- campaignData %>% 
+        e_chart(Month)
+    } else {
+      plot <- campaignData %>% 
+        e_chart(Year)
+    }
+    
+    plot <- plot %>% 
+      e_bar(Campaign1, stack = "grp") %>% 
+      e_bar(Campaign2, stack = "grp") %>%
+      e_bar(Campaign3, stack = "grp") %>%
+      e_bar(Campaign4, stack = "grp") %>%
+      e_bar(Campaign5, stack = "grp") %>%
+      e_theme_custom("www/chart_theme.json") %>% 
+      e_axis_labels(x = glue("{group}"), y ="Total Accepted") %>% 
+      e_title(
+        text = glue("Total Accepted Campaign by {group}"),
+        left = "center",
+        top = "0"
+      ) %>% 
+      e_legend(top = "30") %>% 
+      e_tooltip(
+        trigger = "item",
+        formatter = JS("
+                function(params){return(
+                 '<b>' + params.name + '</b>'
+                 + ' : ' 
+                 + params.value[1]
+                 )}
+                       ")
+      )
+    plot
+  })
+  
   # PROMOTION TAB - END -----------------------------------------------
 }
 

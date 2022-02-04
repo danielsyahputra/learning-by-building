@@ -18,6 +18,7 @@ library(scales)
 library(echarts4r)
 library(highcharter)
 library(htmlwidgets)
+library(glue)
 
 
 # Data Preparation
@@ -653,8 +654,8 @@ marketing <- marketing %>%
   mutate(DayEnroll = wday(Dt_Customer, label = T, abbr = F),
          MonthEnroll = month(Dt_Customer, label = T, abbr = F),
          YearEnroll = year(Dt_Customer),
-         DayEnroll = as.factor(DayEnroll),
-         MonthEnroll = as.factor(MonthEnroll),
+         DayEnroll = as.character(DayEnroll),
+         MonthEnroll = as.character(MonthEnroll),
          YearEnroll = as.factor(YearEnroll))
 
 marketing
@@ -701,7 +702,40 @@ campaignData %>%
       )
 ```
 
+```{r}
+campaignData <- marketing %>% 
+  select(AcceptedCmp1, AcceptedCmp2, AcceptedCmp3,
+         AcceptedCmp4, AcceptedCmp5, DayEnroll,
+         MonthEnroll, YearEnroll)
 
+colnames(campaignData) <-  c("Campaign 1", "Campaign 2", "Campaign 3",
+                                "Campaign 4", "Campaign 5", "Day", "Month", "Year")
+
+campaignData <- campaignData %>% 
+  group_by(Day) %>% 
+  summarise(Campaign1 = sum(`Campaign 1`),
+            Campaign2 = sum(`Campaign 2`),
+            Campaign3 = sum(`Campaign 3`),
+            Campaign4 = sum(`Campaign 4`),
+            Campaign5 = sum(`Campaign 5`))
+```
+
+```{r}
+campaignData %>% 
+  e_chart(Day) %>% 
+  e_bar(Campaign1, stack = "grp") %>% 
+  e_bar(Campaign2, stack = "grp") %>%
+  e_bar(Campaign3, stack = "grp") %>%
+  e_bar(Campaign4, stack = "grp") %>%
+  e_bar(Campaign5, stack = "grp") %>%
+  e_theme_custom("marketing_dashboar/www/chart_theme.json")
+```
+
+
+```{r}
+campaignData$Day <- as.character(campaignData$Day)
+campaignData
+```
 
 
 
