@@ -12,7 +12,10 @@ sidebar <- dashboardSidebar(
              icon = icon("box-open")),
     menuItem(text = "Platform",
              tabName = "platformItem",
-             icon = icon("store"))
+             icon = icon("store")),
+    menuItem(text = "Promotion",
+             tabName = "promotionItem",
+             icon = icon("bullhorn"))
   )
 )
 
@@ -41,7 +44,7 @@ peopleItem <- tabItem(
         radioButtons(
           inputId = "groupBySelector",
           label = shiny::HTML("<span style='color: #f0f0f0'>Group by:</span>"),
-          choices = c("Marital Status", "Education", "Generation"),
+          choices = c("Marital Status", "Education", "Generation", "Country"),
           selected = "Marital Status",
           inline = T
         )
@@ -71,7 +74,7 @@ productItem <- tabItem(
         selectInput(
           inputId = "groupByInputSelector",
           label = shiny::HTML("<span style='color: #f0f0f0'>Group mean total spent by:</span>"),
-          choices = c("Marital Status", "Education", "Generation"),
+          choices = c("Marital Status", "Education", "Generation", "Country"),
           selected = "Marital Status"
         ),
         selectInput(
@@ -144,7 +147,7 @@ platformItem <- tabItem(
         radioButtons(
           inputId = "groupPlatformSelector",
           label = shiny::HTML("<span style='color: #f0f0f0'>Group total purchases by:</span>"),
-          choices = c("Marital Status", "Education", "Generation"),
+          choices = c("Marital Status", "Education", "Generation", "Country"),
           selected = "Marital Status",
           inline = T
         )
@@ -159,6 +162,18 @@ platformItem <- tabItem(
   )
 )
 
+promotionItem <- tabItem(
+  tabName = "promotionItem",
+  fluidPage(
+    fluidRow(
+      box(
+        width = 12,
+        echarts4rOutput(outputId = "campaignSuccessRate")
+      )
+    )
+  )
+)
+
 body <- dashboardBody(
   # CSS
   tags$link(rel = "stylesheet", 
@@ -168,7 +183,8 @@ body <- dashboardBody(
   tabItems(
     peopleItem,
     productItem,
-    platformItem
+    platformItem,
+    promotionItem
   )
 )
 

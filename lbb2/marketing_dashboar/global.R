@@ -71,12 +71,12 @@ marketing <- marketing %>%
   mutate(Age = as.integer(format(Sys.Date(), "%Y")) - Year_Birth)
 
 convert_age <- function(age){ 
-  if(age >= 58){
-    age <- ">= Boomers II" 
-  }else if(age >= 42){
+  if(age > 54){
+    age <- ">= Baby Boomer" 
+  }else if(age >38){
     age <- "Gen X"
-  }else if (age >= 26){
-    age <- "Millennials"
+  }else if (age > 18){
+    age <- "Gen Y"
   } else {
     age <- "Gen Z"
   }
@@ -85,6 +85,32 @@ convert_age <- function(age){
 marketing$Era <- sapply(X = marketing$Age, 
                         FUN = convert_age) 
 marketing$Era <- as.factor(marketing$Era)
+convert_country <- function(country) {
+  if (country == "AUS") {
+    country <- "Australia"
+  } else if (country == "CA") {
+    country <- "Canada"
+  } else if (country == "GER") {
+    country <- "Germany"
+  } else if (country == "IND") {
+    country <- "Indonesia"
+  } else if (country == "ME") {
+    country <- "Mexico"
+  } else if (country == "SA") {
+    country <- "Saudi Arabia"
+  } else if (country == "SP") {
+    country <- "Spain"
+  } else if (country == "US") {
+    country <- "United States"
+  } else {
+    country <- "Unknown"
+  }
+}
+
+marketing$CountryName <- sapply(X = marketing$Country, 
+                                FUN = convert_country)
+marketing$CountryName <- as.factor(marketing$CountryName)
+
 
 source("ui.R")
 source("server.R")

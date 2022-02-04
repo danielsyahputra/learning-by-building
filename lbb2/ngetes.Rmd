@@ -607,9 +607,99 @@ platformPurchases %>%
 
 ```
 
+```{r}
+head(marketing$Country)
+```
 
 
+```{r}
+convert_country <- function(country) {
+  if (country == "AUS") {
+    country <- "Australia"
+  } else if (country == "CA") {
+    country <- "Canada"
+  } else if (country == "GER") {
+    country <- "German"
+  } else if (country == "IND") {
+    country <- "Indonesia"
+  } else if (country == "ME") {
+    country <- "Mexico"
+  } else if (country == "SA") {
+    country <- "Saudi Arabia"
+  } else if (country == "SP") {
+    country <- "Spain"
+  } else if (country == "US") {
+    country <- "United States"
+  } else {
+    country <- "Unknown"
+  }
+}
 
+marketing$CountryName <- sapply(X = marketing$Country, 
+                            FUN = convert_country)
+marketing$CountryName <- as.factor(marketing$CountryName)
+```
+
+
+```{r}
+levels(marketing$CountryName)
+```
+
+
+### Feature Engineering
+
+```{r}
+marketing <- marketing %>% 
+  mutate(DayEnroll = wday(Dt_Customer, label = T, abbr = F),
+         MonthEnroll = month(Dt_Customer, label = T, abbr = F),
+         YearEnroll = year(Dt_Customer),
+         DayEnroll = as.factor(DayEnroll),
+         MonthEnroll = as.factor(MonthEnroll),
+         YearEnroll = as.factor(YearEnroll))
+
+marketing
+```
+```{r}
+campaignData <- marketing %>% 
+  select(AcceptedCmp1, AcceptedCmp2, AcceptedCmp3,
+         AcceptedCmp4, AcceptedCmp5)
+
+campaignData <- as.data.frame(lapply(campaignData, FUN = mean))
+colnames(campaignData) <- c("Campaign 1", "Campaign 2", "Campaign 3",
+                            "Campaign 4", "Campaign 5")
+
+campaignData <- campaignData %>% 
+  pivot_longer(cols = c("Campaign 1", "Campaign 2", "Campaign 3",
+                            "Campaign 4", "Campaign 5"),
+               names_to = "CampaignType",
+               values_to = "SuccessRate") %>% 
+  arrange(desc(SuccessRate)) %>% 
+  mutate(SuccessRate = round(SuccessRate * 100, 2))
+```
+
+```{r}
+campaignData %>% 
+  e_chart(CampaignType) %>% 
+  e_bar(SuccessRate) %>% 
+  e_theme_custom("marketing_dashboar/www/chart_theme.json") %>% 
+  e_axis_labels(x = "Campaign Type", y ="Success Rate") %>% 
+  e_title(
+        text = "Success Rate Each Campaigns",
+        left = "center",
+        top = "0"
+      ) %>% 
+      e_legend(F) %>% 
+      e_tooltip(
+        trigger = "item",
+        formatter = JS("
+                function(params){return(
+                 '<b>' + params.name + '</b>'
+                 + ' : ' 
+                 + params.value[1] + '%'
+                 )}
+                       ")
+      )
+```
 
 
 

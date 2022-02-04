@@ -166,9 +166,12 @@ server <- function(input, output) {
       } else if (param == "Education") {
         data <- marketing %>% 
           group_by(Education) 
-      } else {
+      } else if (param == "Generation") {
         data <- marketing %>% 
           group_by(Era)
+      } else {
+        data <- marketing %>% 
+          group_by(CountryName)
       }
       data <- data %>% 
         summarise(MeanIncome = mean(Income)) %>% 
@@ -184,9 +187,12 @@ server <- function(input, output) {
       } else if (param == "Education") {
         data <- data %>% 
           group_by(Education)
-      } else {
+      } else if (param == "Generation") {
         data <- data %>% 
           group_by(Era)
+      } else {
+        data <- data %>% 
+          group_by(CountryName)
       }
       data <- data %>% 
         summarise(MeanTotalSpent = mean(TotalSpent)) %>% 
@@ -207,9 +213,12 @@ server <- function(input, output) {
     } else if (param == "Education") {
       plot <- data %>% 
         e_chart(Education)
-    } else {
+    } else if (param == "Generation") {
       plot <- data %>% 
         e_chart(Era)
+    } else {
+      plot <- data %>% 
+        e_chart(CountryName)
     }
     plot <- plot %>% 
       e_pie(MeanIncome, radius = c("50%", "75%")) %>% 
@@ -249,9 +258,12 @@ server <- function(input, output) {
     } else if (param == "Education") {
       plot <- data %>% 
         e_chart(Education)
-    } else {
+    } else if (param == "Generation") {
       plot <- data %>% 
         e_chart(Era)
+    } else {
+      plot <- data %>% 
+        e_chart(CountryName)
     }
     plot <- plot %>% 
       e_bar(MeanTotalSpent) %>% 
@@ -295,10 +307,10 @@ server <- function(input, output) {
     orderBy <- input$orderByButton
     
     productSpent <- marketing %>% 
-      select(Marital_Status,Education, Era, MntWines, MntFruits, MntMeatProducts,
+      select(Marital_Status,Education, Era,CountryName, MntWines, MntFruits, MntMeatProducts,
              MntFishProducts, MntSweetProducts, MntGoldProds)
     
-    colnames(productSpent) <- c("Marital_Status", "Education", "Era",
+    colnames(productSpent) <- c("Marital_Status", "Education", "Era","Country",
                                 "Wines", "Fruits", "Meats", 
                                 "Fishs", "Sweets", "Gold")
     
@@ -308,9 +320,12 @@ server <- function(input, output) {
     } else if (param == "Education") {
       productSpent <- productSpent %>% 
         group_by(Education)
-    } else {
+    } else if (param == "Generation") {
       productSpent <- productSpent %>% 
         group_by(Era)
+    } else {
+      productSpent <- productSpent %>% 
+        group_by(Country)
     }
     
     productSpent <- productSpent %>% 
@@ -353,9 +368,12 @@ server <- function(input, output) {
     } else if (param == "Education") {
       plot <- productSpent %>% 
         e_chart(Education)
-    } else {
+    } else if (param == "Generation"){
       plot <- productSpent %>% 
         e_chart(Era)
+    } else {
+      plot <- productSpent %>% 
+        e_chart(Country)
     }
     
     plot <- plot %>% 
@@ -547,10 +565,10 @@ server <- function(input, output) {
     platform <- input$platformTypeSelector
     
     platformPurchases <- marketing %>% 
-      select(Marital_Status, Education, Era,
+      select(Marital_Status, Education, Era,CountryName,
              NumWebPurchases, NumCatalogPurchases, NumStorePurchases)
     
-    colnames(platformPurchases) <- c("Marital_Status", "Education", "Era",
+    colnames(platformPurchases) <- c("Marital_Status", "Education", "Era","Country",
                                      "Web", "Catalog", "Store")
     
     if (group == "Marital Status") {
@@ -559,9 +577,12 @@ server <- function(input, output) {
     } else if (group == "Education") {
       platformPurchases <- platformPurchases %>% 
         group_by(Education)
-    } else {
+    } else if (group == "Generation") {
       platformPurchases <- platformPurchases %>% 
         group_by(Era)
+    } else {
+      platformPurchases <- platformPurchases %>% 
+        group_by(Country)
     }
     
     platformPurchases <- platformPurchases %>% 
@@ -592,9 +613,12 @@ server <- function(input, output) {
     } else if (group == "Education") {
       plot <- platformPurchases %>% 
         e_chart(Education)
-    } else {
+    } else if (group == "Generation") {
       plot <- platformPurchases %>% 
         e_chart(Era)
+    } else {
+      plot <- platformPurchases %>% 
+        e_chart(Country)
     }
     
     if (platform == "Web") {
@@ -632,9 +656,51 @@ server <- function(input, output) {
     plot
   })
   
-  
-  
   # PLATFORM TAB - END -----------------------------------------------
+  
+  # PROMOTION TAB - START -----------------------------------------------
+  
+  output$campaignSuccessRate <- renderEcharts4r({
+    campaignData <- marketing %>% 
+      select(AcceptedCmp1, AcceptedCmp2, AcceptedCmp3,
+             AcceptedCmp4, AcceptedCmp5)
+    
+    campaignData <- as.data.frame(lapply(campaignData, FUN = mean))
+    colnames(campaignData) <- c("Campaign 1", "Campaign 2", "Campaign 3",
+                                "Campaign 4", "Campaign 5")
+    
+    campaignData <- campaignData %>% 
+      pivot_longer(cols = c("Campaign 1", "Campaign 2", "Campaign 3",
+                            "Campaign 4", "Campaign 5"),
+                   names_to = "CampaignType",
+                   values_to = "SuccessRate") %>% 
+      arrange(desc(SuccessRate)) %>% 
+      mutate(SuccessRate = round(SuccessRate * 100, 2))
+    
+    campaignData %>% 
+      e_chart(CampaignType) %>% 
+      e_bar(SuccessRate) %>% 
+      e_theme_custom("www/chart_theme.json") %>% 
+      e_axis_labels(x = "Campaign Type", y ="Success Rate") %>% 
+      e_title(
+        text = "Marketing Capaign Success Rate",
+        left = "center",
+        top = "0"
+      ) %>% 
+      e_legend(F) %>% 
+      e_tooltip(
+        trigger = "item",
+        formatter = JS("
+                function(params){return(
+                 '<b>Success Rate</b>'
+                 + ' : ' 
+                 + params.value[1] + '%'
+                 )}
+                       ")
+      )
+  })
+  
+  # PROMOTION TAB - END -----------------------------------------------
 }
 
 
