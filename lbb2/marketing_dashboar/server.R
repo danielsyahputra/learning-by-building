@@ -831,7 +831,7 @@ server <- function(input, output) {
         trigger = "item",
         formatter = JS("
                 function(params){return(
-                 '<b>' + params.name + '</b>'
+                 '<b>Total Accepted</b>'
                  + ' : ' 
                  + params.value[1]
                  )}
@@ -842,5 +842,7 @@ server <- function(input, output) {
   
   # PROMOTION TAB - END -----------------------------------------------
   
+  # TABLE TAB - START -----------------------------------------------
   
+  # TABLE TAB - END -----------------------------------------------
 }

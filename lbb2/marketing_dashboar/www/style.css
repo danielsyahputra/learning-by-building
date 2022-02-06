@@ -67,3 +67,14 @@
 .selectize-input.full {
     background-color: #e0e0e0;
 }
+
+.about-title {
+  text-align: center;
+}
+
+#about-image {
+  border-radius: 50%;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
