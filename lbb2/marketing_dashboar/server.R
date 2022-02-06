@@ -72,7 +72,7 @@ server <- function(input, output) {
                      accuracy = 0.01),
       title = toupper("AVERAGE CUSTOMER INCOME"),
       sparkobj = hcCustomerIncome,
-      info = "This is the customer income based on marketing data",
+      info = "Average customer income based on marketing data",
       subtitle = NULL,
       icon = icon("money-bill-wave"),
       href = NULL
@@ -109,7 +109,7 @@ server <- function(input, output) {
                      accuracy = 0.01),
       title = toupper("AVERAGE CUSTOMER SPENT"),
       sparkobj = hcCustomerSpent,
-      info = "This is the total customer spent based on marketing data",
+      info = "Average customers total spent based on marketing data",
       subtitle = NULL,
       icon = icon("money-bill-wave"),
       href = NULL
@@ -146,7 +146,7 @@ server <- function(input, output) {
                      accuracy = 0.1),
       title = toupper("AVERAGE CUSTOMER PURCHASES"),
       sparkobj = hcCustomerPurchases,
-      info = "This is the total customer purchases based on marketing data",
+      info = "Total customers purchases based on marketing data",
       subtitle = NULL,
       icon = icon("money-bill-wave"),
       href = NULL
@@ -233,7 +233,7 @@ server <- function(input, output) {
         trigger = "item",
         formatter = JS("
                     function(params){return(
-                        '<b>Mean Income</b>'
+                        params.name + '<br><b>Mean Income</b>'
                            + ' : $'
                            + (params.value).toLocaleString('en-US', 
                            {maximumFractionDigits : 2, minimumFractionDigits: 2})
@@ -287,7 +287,7 @@ server <- function(input, output) {
         formatter = JS(
           "
        function(params){return(
-       '<b>Mean Total Spent</b>'
+       params.name + '<br><b>Mean Total Spent</b>'
        + ' : $' 
        + params.value[0]
        )}
@@ -715,7 +715,7 @@ server <- function(input, output) {
         trigger = "item",
         formatter = JS("
                 function(params){return(
-                 '<b>' + params.name + '</b>'
+                 params.name + '<br><b>Total Purchases</b>'
                  + ' : ' 
                  + params.value
                  )}
@@ -760,7 +760,7 @@ server <- function(input, output) {
         trigger = "item",
         formatter = JS("
                 function(params){return(
-                 '<b>Success Rate</b>'
+                 params.name + '<br><b>Success Rate</b>'
                  + ' : ' 
                  + params.value[1] + '%'
                  )}
@@ -831,7 +831,7 @@ server <- function(input, output) {
         trigger = "item",
         formatter = JS("
                 function(params){return(
-                 '<b>Total Accepted</b>'
+                 '<br><b>Total Accepted</b>'
                  + ' : ' 
                  + params.value[1]
                  )}
@@ -842,7 +842,150 @@ server <- function(input, output) {
   
   # PROMOTION TAB - END -----------------------------------------------
   
-  # TABLE TAB - START -----------------------------------------------
+  # RFM Analysis TAB - START -----------------------------------------------
   
-  # TABLE TAB - END -----------------------------------------------
+  output$boxplotRFM <- renderEcharts4r({
+    
+    RFM <- marketing %>%
+      mutate(Monetary = MntWines + MntFruits + MntMeatProducts +
+               MntFishProducts + MntSweetProducts + MntGoldProds,
+             Frequency = NumWebPurchases + NumCatalogPurchases + NumStorePurchases) %>% 
+      select(Recency, Frequency, Monetary)
+    
+    RFM_table <- RFM %>% 
+      pivot_longer(cols = c("Recency", "Frequency", "Monetary"),
+                   names_to = "Category",
+                   values_to = "Value")
+    
+    RFM_table %>% 
+      group_by(Category) %>% 
+      e_charts() %>% 
+      e_boxplot(Value, itemStyle = list(color = "#db902e")) %>% 
+      e_theme_custom("www/chart_theme.json") %>% 
+      e_title(
+        text = glue("Boxplot of RFM (Recency, Frequency, and Monetary)"),
+        left = "center",
+        top = "0"
+      ) %>% 
+      e_axis_labels(x = "Category",
+                    y = "Value") %>% 
+      e_x_axis(
+        name = "Category",
+        nameLocation = "center",
+        nameGap = "25") %>%
+      e_tooltip(trigger = c("item", "axis"))
+    
+  })
+  
+  output$segmentationPlot <- renderEcharts4r({
+    
+    # RFM Analysis
+    
+    RFM <- marketing %>%
+      mutate(Monetary = MntWines + MntFruits + MntMeatProducts +
+               MntFishProducts + MntSweetProducts + MntGoldProds,
+             Frequency = NumWebPurchases + NumCatalogPurchases + NumStorePurchases) %>% 
+      select(Recency, Frequency, Monetary)
+    
+    #Scoring
+    #R_score
+    RFM$R_Score[RFM$Recency > 74.0] <- 1
+    RFM$R_Score[RFM$Recency > 49 & RFM$Recency<=74 ] <- 2
+    RFM$R_Score[RFM$Recency > 24 & RFM$Recency<=49 ] <- 3
+    RFM$R_Score[RFM$Recency <= 24] <- 4
+    #F_score
+    RFM$F_Score[RFM$Frequency < 6]<-1
+    RFM$F_Score[RFM$Frequency >= 6 & RFM$Frequency < 12] <- 2
+    RFM$F_Score[RFM$Frequency >= 12 & RFM$Frequency < 18] <- 3
+    RFM$F_Score[RFM$Frequency >= 18] <- 4
+    #M_score
+    RFM$M_Score[RFM$Monetary < 68.75] <-1
+    RFM$M_Score[RFM$Monetary >= 68.75 & RFM$Monetary < 396.0] <- 2
+    RFM$M_Score[RFM$Monetary >= 396.0 & RFM$Monetary < 1045.50 ] <- 3
+    RFM$M_Score[RFM$Monetary >= 1045.50] <- 4
+    
+    #RFM_score
+    RFM<- RFM %>% mutate(RFM_Score = 100 * R_Score + 10 * F_Score + M_Score)
+    
+    #Customer Segmentation
+    champions <- c(444)
+    loyal_customers <- c(334, 342, 343, 344, 433, 434, 443)
+    potential_loyalist <- c(332,333,341,412,413,414,431,432,441,442,421,422,423,424)
+    recent_customers <- c(411)
+    promising <- c(311, 312, 313, 331)
+    needing_attention <- c(212,213,214,231,232,233,241,314,321,322,323,324)
+    about_to_sleep <- c(211)
+    at_risk <- c(112,113,114,131,132,133,142,124,123,122,121,224,223,222,221)
+    cant_lose <- c(134,143,144,234,242,243,244)
+    hibernating <- c(141)
+    lost <- c(111)
+    
+    convert_score <- function(score) {
+      if (score %in% champions) {
+        score <- "Champions"
+      } else if (score %in% loyal_customers) {
+        score <- "Loyal Customers"
+      } else if (score %in% potential_loyalist) {
+        score <- "Potential Loyalist"
+      } else if (score %in% recent_customers) {
+        score <- "Recent Customers"
+      } else if (score %in% promising) {
+        score <- "Promising"
+      } else if (score %in% needing_attention) {
+        score <- "Customer Needing Attention"
+      } else if (score %in% about_to_sleep) {
+        score <- "About to Sleep"
+      } else if (score %in% at_risk) {
+        score <- "At risk"
+      } else if (score %in% cant_lose) {
+        score <- "Can't Lose Them"
+      } else if (score %in% hibernating) {
+        score <- "Hibernating"
+      } else if (score %in% lost) {
+        score <- "Lost"
+      } else {
+        score <- "Unknown"
+      }
+    }
+    
+    RFM$Segment <- sapply(X = RFM$RFM_Score, FUN = convert_score)
+    
+    customerSegmentation <- RFM %>%
+      group_by(Segment) %>% 
+      summarise(Freq = n()) %>% 
+      arrange(desc(Freq))
+    
+    # Create chart of customer segmentation
+    customerSegmentation %>% 
+      e_chart(Segment) %>% 
+      e_bar(Freq) %>% 
+      e_flip_coords() %>% 
+      e_y_axis(inverse = T) %>% 
+      e_theme_custom("www/chart_theme.json") %>% 
+      e_title(
+        text = glue("Customer Segmentation"),
+        left = "center",
+        top = "0"
+      ) %>% 
+      e_legend(show = F) %>% 
+      e_axis_labels(x = "Count") %>% 
+      e_x_axis(
+        name = "Count",
+        nameLocation = "center",
+        nameGap = "25") %>%
+      e_tooltip(
+        trigger = "item",
+        formatter = JS(
+          "
+       function(params){return(
+       params.value[1] + '<br><b>Count</b>'
+       + ' : ' 
+       + params.value[0]
+       )}
+       "
+        )
+      )
+  })
+  
+  # RFM Analysis - END -----------------------------------------------
 }

@@ -16,6 +16,9 @@ sidebar <- dashboardSidebar(
     menuItem(text = "Promotion",
              tabName = "promotionItem",
              icon = icon("bullhorn")),
+    menuItem(text = "RFM Analysis",
+             tabName = "rfmItem",
+             icon = icon("chart-line")),
     menuItem(text = "About",
              tabName = "aboutItem",
              icon = icon("user"))
@@ -233,16 +236,35 @@ aboutItem <- tabItem(
         h4("About this dashboard", class = "about-title"),
         hr(),
         p("Dashboard for marketing purposes with interactive charts. 
-          This project is built based on the 4 P's principle in marketing"),
+          This project is built based on the 4 Ps principle in marketing"),
         p("This dashboard was made using marketing analytics data which can be accessed on ",
           a("Kaggle.", href="https://www.kaggle.com/jackdaoud/marketing-data")),
         p("What I've done in this project"),
         tags$ul(
           tags$li("Performed data wrangling to transform data into a desired format for better decision making in less time."), 
           tags$li("Performed feature engineering to get new features based on raw data."), 
+          tags$li("Performed RFM analysis to create customers segmentation based on their recency, frequency, and monetary."),
           tags$li("Performed data visualization with interactive charts using highcharter and echarts4r"),
           tags$li("Built a dashboard using Shiny R to get a standalone web app consisting of charts that I've done before")
         )
+      )
+    )
+  )
+)
+
+rfmItem <- tabItem(
+  tabName = "rfmItem",
+  fluidPage(
+    fluidRow(
+      box(
+        width = 12,
+        echarts4rOutput(outputId = "boxplotRFM")
+      )
+    ),
+    fluidRow(
+      box(
+        width = 12,
+        echarts4rOutput(outputId = "segmentationPlot")
       )
     )
   )
@@ -260,6 +282,7 @@ body <- dashboardBody(
     productItem,
     platformItem,
     promotionItem,
+    rfmItem,
     aboutItem
   )
 )

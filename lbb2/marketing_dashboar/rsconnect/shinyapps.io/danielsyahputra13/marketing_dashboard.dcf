@@ -5,9 +5,9 @@ account: danielsyahputra13
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5540875
-bundleId: 5548178
+bundleId: 5548592
 url: https://danielsyahputra13.shinyapps.io/marketing_dashboard/
-when: 1644127854.74307
-lastSyncTime: 1644127854.74308
+when: 1644143957.03953
+lastSyncTime: 1644143957.03954
 asMultiple: FALSE
 asStatic: FALSE
