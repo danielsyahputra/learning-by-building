@@ -233,7 +233,7 @@ server <- function(input, output) {
         trigger = "item",
         formatter = JS("
                     function(params){return(
-                        '<b>' + params.name + '</b>'
+                        '<b>Mean Income</b>'
                            + ' : $'
                            + (params.value).toLocaleString('en-US', 
                            {maximumFractionDigits : 2, minimumFractionDigits: 2})
@@ -287,7 +287,7 @@ server <- function(input, output) {
         formatter = JS(
           "
        function(params){return(
-       '<b>' + params.name + '</b>'
+       '<b>Mean Total Spent</b>'
        + ' : $' 
        + params.value[0]
        )}
@@ -403,7 +403,7 @@ server <- function(input, output) {
         formatter = JS(
           "
        function(params){return(
-       '<b>' + params.name + '</b>'
+       '<b>Mean Total Spent</b>'
        + ' : $' 
        + params.value[0]
        )}
@@ -469,6 +469,74 @@ server <- function(input, output) {
        "
         )
       )
+  })
+  
+  output$boxplotProducts <- renderEcharts4r({
+    param <- input$boxplotGroupSelector
+    productType = input$productTypeSelector
+    
+    productSpent <- marketing %>% 
+      select(Marital_Status,Education, Era,CountryName, MntWines, MntFruits, MntMeatProducts,
+             MntFishProducts, MntSweetProducts, MntGoldProds)
+    
+    colnames(productSpent) <- c("Marital_Status", "Education", "Era", "Country",
+                                "Wines", "Fruits", "Meats", 
+                                "Fishs", "Sweets", "Gold")
+    
+    plot <- ""
+    
+    if (param == "Marital Status") {
+     plot <- productSpent %>% 
+       group_by(Marital_Status)
+    } else if (param == "Education") {
+      plot <- productSpent %>% 
+        group_by(Education)
+    } else if (param == "Generation"){
+      plot <- productSpent %>% 
+        group_by(Era)
+    } else {
+      plot <- productSpent %>% 
+        group_by(Country)
+    }
+    
+    plot <- plot %>% 
+      e_charts()
+    
+    if (productType == "Wines") {
+      plot <- plot %>% 
+        e_boxplot(Wines, itemStyle = list(color = "#db902e"))
+    } else if (productType == "Fruits") {
+      plot <- plot %>% 
+        e_boxplot(Fruits, itemStyle = list(color = "#db902e"))
+    } else if (productType == "Meats") {
+      plot <- plot %>% 
+        e_boxplot(Meats, itemStyle = list(color = "#db902e"))
+    } else if (productType == "Fishs") {
+      plot <- plot %>% 
+        e_boxplot(Fishs, itemStyle = list(color = "#db902e"))
+    } else if (productType == "Sweets") {
+      plot <- plot %>% 
+        e_boxplot(Sweets, itemStyle = list(color = "#db902e"))
+    } else {
+      plot <- plot %>% 
+        e_boxplot(Gold, itemStyle = list(color = "#db902e"))
+    }
+    
+    plot <- plot %>% 
+      e_theme_custom("www/chart_theme.json") %>% 
+      e_title(
+        text = glue("Customers Amount Spent by {param}"),
+        left = "center",
+        top = "0"
+      ) %>% 
+      e_axis_labels(x = glue("{param}"),
+                    y = "Amount Spent") %>% 
+      e_x_axis(
+        name = glue("{param}"),
+        nameLocation = "center",
+        nameGap = "25") %>%
+      e_tooltip(trigger = c("item", "axis"))
+    plot
   })
   
   # PRODUCTS TAB - END -----------------------------------------------

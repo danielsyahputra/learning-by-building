@@ -738,9 +738,49 @@ campaignData
 ```
 
 
+```{r}
+df <- data.frame(
+  x = c(
+    rnorm(100),
+    runif(100, -5, 10),
+    rnorm(100, 10, 3)
+  ),
+  grp = c(
+    rep(LETTERS[1], 100),
+    rep(LETTERS[2], 100),
+    rep(LETTERS[3], 100)
+  )
+)
+
+df |> 
+  group_by(grp) |> 
+  e_charts() |> 
+  e_boxplot(x)
+```
 
 
+```{r}
+productSpent <- marketing %>% 
+      select(Marital_Status,Education, Era,CountryName, MntWines, MntFruits, MntMeatProducts,
+             MntFishProducts, MntSweetProducts, MntGoldProds)
+    
+colnames(productSpent) <- c("Marital_Status", "Education", "Era", "Country",
+                                "Wines", "Fruits", "Meats", 
+                                "Fishs", "Sweets", "Gold")
+    
+productSpent
+```
 
+```{r}
+hc <- hcboxplot(
+  x = productSpent$Wines,
+  var = productSpent$Marital_Status,
+  outliers = TRUE,
+  color = "#2980b9"
+  ) %>% 
+  hc_chart(type = "column")
+hc
+```
 
 
 

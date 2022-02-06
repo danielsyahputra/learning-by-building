@@ -95,7 +95,7 @@ productItem <- tabItem(
     ),
     fluidRow(
       box(
-        width = 12,
+        width = 6,
         radioButtons(
           inputId = "productTypeSelector",
           label = shiny::HTML("<span style='color: #f0f0f0'>Choose product type:</span>"),
@@ -103,12 +103,26 @@ productItem <- tabItem(
           selected = "Wines",
           inline = T
         )
+      ),
+      box(
+        width = 6,
+        radioButtons(
+          inputId = "boxplotGroupSelector",
+          label = shiny::HTML("<span style='color: #f0f0f0'>Choose product type:</span>"),
+          choices = c("Marital Status", "Education", "Generation", "Country"),
+          selected = "Marital Status",
+          inline = T
+        )
       )
     ),
     fluidRow(
       box(
-        width = 12,
+        width = 6,
         echarts4rOutput(outputId = "histProducts")
+      ),
+      box(
+        width = 6,
+        echarts4rOutput(outputId = "boxplotProducts")
       )
     )
   )
