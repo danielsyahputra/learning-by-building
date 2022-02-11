@@ -1,20 +1,82 @@
 ---
 title: "WHO - Life Expectancy"
-subtitle: "Lagu Tahun 1970 - 2020"
 author: 'Author: Daniel Syahputra'
 date: 'Las Updated: `r Sys.Date()`'
 output:
   html_document:
     toc: true
+    toc_float: true
+    toc_depth: 5
+    df_print: paged
+    theme: united
+    highlight: zenburn
+    css: assets/style.css
+    mathjax: null
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Introduction
+## Introduction {.tabset}
+
+### Abstract
+
+### About data
+
+The dataset related to life expectancy, health factors for 193 countries has been collected from WHO data repository website. This dataset contains 2938 rows with 22 features / columns which can be accessed on [Kaggle](https://www.kaggle.com/kumarajarshi/life-expectancy-who). Let see description for each attribute in this dataset:
+
+-   `Country`:
+
+-   `Year`
+
+-   `Status`
+
+-   `Life.expectancy`
+
+-   `Adult.Mortality`
+
+-   `infant.deaths`
+
+-   `Alcohol`
+
+-   `percentage.expenditure`
+
+-   `Hepatitis.B`
+
+-   `Measles`
+
+-   `BMI`
+
+-   `under.five.deaths`
+
+-   `Polio`
+
+-   `Total.expenditure`
+
+-   `Diphtheria`
+
+-   `HIV.AIDS`
+
+-   `GDP`
+
+-   `Population`
+
+-   `thinness..1.19.years`
+
+-   `thinness.5.9.years`
+
+-   `Income.composition.of.resources`
+
+-   `Schooling`
+
+As we see from those attribute above, there some attributes with not clear name. So, in data preparation we'll rename some columns.
+
+### Goals
+
+## Data Preparation
 
 ```{r}
 life_expectancy <- read.csv("datasets/life_expectancy.csv")
-head(life_expectancy)
+unique(life_expectancy$Year)
 ```
