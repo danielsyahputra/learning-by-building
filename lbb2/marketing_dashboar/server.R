@@ -831,7 +831,7 @@ server <- function(input, output) {
         trigger = "item",
         formatter = JS("
                 function(params){return(
-                 '<br><b>Total Accepted</b>'
+                 '<b>Total Accepted</b>'
                  + ' : ' 
                  + params.value[1]
                  )}
