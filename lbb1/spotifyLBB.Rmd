@@ -1,14 +1,18 @@
 ---
-title: "Ekplorasi Spotify Top Chart"
+title: "Spotify Top Chart"
 subtitle: "Lagu Tahun 1970 - 2020"
 author: 'Author: Daniel Syahputra'
 date: 'Updated: `r Sys.Date()`'
 output:
-  cleanrmd::html_document_clean:
-    theme: writ
+  html_document:
     toc: true
     toc_float: true
-    use_fontawesome: true
+    toc_depth: 5
+    df_print: paged
+    theme: united
+    highlight: zenburn
+    css: assets/style.css
+    mathjax: null
 ---
 
 ```{r setup, include=FALSE}
@@ -29,33 +33,35 @@ Setiap tahunnya, spotify memberikan daftar lagu-lagu yang termasuk kedalam kateg
 
 Dataset yang digunakan berisikan lagu-lagu dari tahun 1970 hingga 2021 yang pernah memasuki *top chart* spotify. Berikut ini adalah informasi mengenai *feature* yang ada pada dataset:
 
--   `title`
+-   `title` Title
 
--   `artist`
+-   `artist` Artist
 
--   `genre`
+-   `genre` Genre of the song
 
--   `bpm`
+-   `year` Year of the song (due to re-releases, the year might not correspond to the release year of the original song)
 
--   `nrgy`
+-   `bpm` Beats per minute
 
--   `dnce`
+-   `nrgy` Energy of a song, the higher the value the more energetic the song is
 
--   `dB`
+-   `dnce` The higher the value, the easier it is to dance to this song.
 
--   `live`
+-   `dB` The higher the value, the louder the song
 
--   `val`
+-   `live` The higher the value, the more likely the song is a live recording.
 
--   `dur`
+-   `val` The higher the value, the more positive the mood for the song
 
--   `acous`
+-   `dur` The duration of the song
 
--   `spch`
+-   `acous` The higher the value the more acoustic the song is.
 
--   `popularity`
+-   `spch` The higher the value the more spoken words the song contains.
 
--   `has_win_award`
+-   `popularity` The higher the value the more popular the song is.
+
+-   `has_win_award` Boolean value to indicate if the song has won an award or not. Value of 1 if the song has already won one or more awards otherwise 0 if the song hasn't won any awards.
 
 ## Import Data dan Package
 
@@ -66,6 +72,7 @@ library(tidyverse)
 library(readr)
 library(ggplot2)
 library(plotly)
+library(glue)
 ```
 
 ```{r}
@@ -143,12 +150,7 @@ spotify %>%
 #### Apakah terdapat durasi tertentu yang dapat mempengaruhi popularitas lagu?
 
 ```{r}
-normalize <- function(x) {
-  return((x - min(x)) / (max(x) - min(x)))
-}
-```
-
-```{r}
+library(ggthemes)
 spotify %>% 
   ggplot(aes(x = dur, y = popularity)) + 
   geom_point() + 
@@ -165,6 +167,8 @@ spotify %>%
 ```{r}
 cor(spotify$dur, spotify$popularity)
 ```
+
+Dari hasil diatas, dapat diketahui bahwa korelasi / hubungan antara Durasi dan Popularitas cukup kecil. Lalu, apa saja komponen yang menentukan popularitas suatu lagu? Kita akan cari tahu pada bagian pemodelan di bawah.
 
 ### Siapa Artis Paling Populer?
 
@@ -274,3 +278,94 @@ test = spotify[-index, ]
 print(dim(train))
 print(dim(test))
 ```
+
+#### Normalisasi Fitur Numerik
+
+```{r}
+normalize <- function(x) {
+  return((x - min(x)) / (max(x) - min(x)))
+}
+```
+
+```{r}
+# Select all numeric feature from spotify
+train <- train %>% 
+  select_if(is.numeric)
+data_train <- lapply(
+  train[, c("year", "bpm","nrgy",
+                      "dnce", "dB", "live", "val",
+                      "dur", "acous", "spch")], 
+  FUN = normalize) %>% 
+  as.data.frame()
+data_train$popularity = train$popularity
+```
+
+```{r}
+test <- test %>% 
+  select_if(is.numeric)
+
+data_test <- lapply(
+  test[, c("year", "bpm","nrgy",
+                      "dnce", "dB", "live", "val",
+                      "dur", "acous", "spch")], 
+  FUN = normalize) %>% 
+  as.data.frame()
+data_test$popularity = test$popularity
+```
+
+#### Multiple Regression
+
+```{r}
+linreg = lm(data = data_train, 
+            formula = popularity ~ year + bpm + nrgy + dnce + dB + live + val + dur + acous + spch)
+
+summary(linreg)
+```
+
+Simbol *significance code* `***` pada hasil diatas menandakan kalau feature tersebut adalah *feature / predictor* yang penting. Sehingga, kita dapat menyimpulkan komponen yang mempengaruhi popularitas suatu lagu adalah:
+
+-   `nrgy` : Seberapa energic lagu tersebut
+
+-   `dnce`: Apakah lagu dapat digunakan untuk menari
+
+-   `dB`: Tingkat kekerasan lagu
+
+-   `acous`: Seberapa akustik lagu tersebut.
+
+#### Model Evaluation Metrics
+
+```{r}
+eval_metrics <- function(model, df, predictions, target){
+  resids = df[, target] - predictions
+  resids2 = resids ** 2
+  N = length(predictions)
+  r2 = as.character(round(summary(model)$r.squared, 2))
+  adj_r2 = as.character(round(summary(model)$adj.r.squared, 2))
+  print(adj_r2)
+  print(as.character(round(sqrt(sum(resids2) / N), 2))) # RMSE
+}
+```
+
+```{r}
+# Evaluation on train data
+predictions = predict(linreg, newdata = data_train)
+eval_metrics(linreg, data_train, predictions, target = "popularity")
+```
+
+```{r}
+# Evaluation on test data
+predictions = predict(linreg, newdata = test)
+eval_metrics(linreg, test, predictions, target = "popularity")
+```
+
+Dari hasil-hasil diatas, kita memiliki suatu model regresi yang `R^2 (coefficient of determination)` nya 0.18. Artinya, hanya 18% dari *target / dependent variabel* yang dapat dijelaskan oleh *independent variable* nya. Dalam kasus ini, *dependent variable* kita adalah `popularity` sedangka *feature* yang digunakan untuk memprediksi adalah *independent variable* nya.
+
+## Tambahan
+
+RMarkdown ini belum sempurna, berikut ini beberapa hal yang bisa saya kembangkan kedepannya:
+
+-   Menambah eksplorasi lebih lanjut mengenai data spotify dikarenakan masih banyak hal yang bisa digali dari data tersebut.
+
+-   Hasil evaluasi dari model regresi masih jelek, hal ini bisa dikarenakan proses *data preprocessing* yang kurang tepat. Bisa juga dengan mencoba model regresi yang lain seperti Random Forest, Support Vector Machine, dll.
+
+-   Buat model klasifikasi untuk memprediksi kecenderungan suatu lagu memenangkan *award* atau tidak.
