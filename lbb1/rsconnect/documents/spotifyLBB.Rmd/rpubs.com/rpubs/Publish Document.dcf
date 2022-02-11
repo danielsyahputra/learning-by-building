@@ -1,0 +1,11 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/860681/05ebc1d33b3c4bd3a4d5f7188dffc4b8
+bundleId: https://api.rpubs.com/api/v1/document/860681/05ebc1d33b3c4bd3a4d5f7188dffc4b8
+url: http://rpubs.com/danielsyahputra13/860681
+when: 1643628383.33292
+lastSyncTime: 1643628383.33293
