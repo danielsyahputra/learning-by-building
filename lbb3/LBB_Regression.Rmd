@@ -16,6 +16,14 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(glue)
+library(MLmetrics)
 ```
 
 ## Introduction {.tabset}
@@ -25,6 +33,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ### About data
 
 The dataset related to life expectancy, health factors for 193 countries has been collected from WHO data repository website. This dataset contains 2938 rows with 22 features / columns which can be accessed on [Kaggle](https://www.kaggle.com/kumarajarshi/life-expectancy-who). Let see description for each attribute in this dataset:
+
+```{r}
+life_expectancy <- read.csv("datasets/life_expectancy.csv")
+life_expectancy
+```
 
 -   `Country`:
 
@@ -70,13 +83,94 @@ The dataset related to life expectancy, health factors for 193 countries has bee
 
 -   `Schooling`
 
-As we see from those attribute above, there some attributes with not clear name. So, in data preparation we'll rename some columns.
+As we see from those attribute above, there some attributes with not clear name. So, in data preparation we'll rename some columns to get more descriptive name of columns.
 
 ### Goals
 
+The goals of this project is to enhance understanding of **linear regression***,* how algorithm/math works behind it, and also limitation that should we considered before applying linear regression models to our data. Attribute/Column that we'll rename:
+
+-   `Life.expectancy` to `LifeExpectancy`
+
+-   `Adult.Mortality` to `AdultMortality`
+
+-   `infant.deaths` to `InfantDeaths`
+
+-   `percentage.expenditure` to `PercentageExpenditure`
+
+-   `under.five.deaths` to `UnderFiveDeaths`
+
+-   `Total.expenditure` to `TotalExpenditure`
+
+-   `thinness..1.19.years` to `Thinnes1To19Years`
+
+-   `thinness.5.9.years` to `Thinnes5To9Years`
+
+-   `Income.composition.of.resources` `IncomeCompositionOfResources`
+
 ## Data Preparation
 
+### Renaming Columns' name
+
+As I told before, there are some attributes which didn't have a good descriptive name. Beside of that, I also want my columns' name have similar naming for each other. For example, I wanna all of my columns' name always started of capitalized alphabet, as you can see there are some columns which not started of the capitalized alphabet.
+
 ```{r}
-life_expectancy <- read.csv("datasets/life_expectancy.csv")
-unique(life_expectancy$Year)
+names(life_expectancy)[4] <- "LifeExpectancy"
+names(life_expectancy)[5] <- "AdultMortality"
+names(life_expectancy)[6] <- "InfantDeaths"
+names(life_expectancy)[8] <- "PercentageExpenditure"
+names(life_expectancy)[9] <- "HepatitisB"
+names(life_expectancy)[12] <- "UnderFiveDeaths"
+names(life_expectancy)[14] <- "TotalExpenditure"
+names(life_expectancy)[19] <- "Thinnes1To19Years"
+names(life_expectancy)[20] <- "Thinnes5To9Years"
+names(life_expectancy)[21] <- "IncomeCompositionOfResources"
+
+names(life_expectancy)
+```
+
+### Data Types
+
+```{r}
+str(life_expectancy)
+```
+
+Columns that we'll cast to another data types:
+
+-   Country
+
+-   Status
+
+```{r}
+# change the data types
+life_expectancy <- life_expectancy %>% 
+  mutate(Country = as.factor(Country),
+         Status = as.factor(Status))
+```
+
+### Detecting and Handling Missing values
+
+#### Checking missing values
+
+```{r}
+
+# Check whether there're missing-value in the dataset.
+colSums(is.na(life_expectancy))
+```
+
+As we can see from the result above, around half of the total columns have missing values. In modeling, missing value can lead to a biased model because we can't properly analyze the relationship of each attribute. Because of that, in machine learning pipeline, any problem related to missing value should always be treated. There are two ways treatments that peoples actually do such as:
+
+-   Remove missing values.
+
+-   Imputation.
+
+Each of these two treatments has pros and cons related to how these treatments can affect our model next time. Removing missing values maybe the easiest way to treat missing values, but this treatment not recommended if there are so many missing values in our data because we we'll lose so many rows from our data.
+
+Instead of removing missing value, we can fill/substitute the missing values with a value that maybe can represent the actual data. In data science practice, many people fill the missing data with the descriptive statistic value such as mean, median, and mode.
+
+#### Handling missing values
+
+In this section, we'll try to handle the missing values ​​by doing an imputation. We'll impute the missing value with the median value to make sure that our imputation safe from the presence of outliers.
+
+```{r}
+
 ```
